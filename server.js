@@ -263,7 +263,8 @@ io.on('connection', (socket) => {
 });
 
 // --- START THE SERVER --- 
-const PORT = 3000;
+// Use the cloud provider's port, OR default to 3000 if running locally
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🎰 Casino Server is running on http://localhost:${PORT}`);
+    console.log(`🎰 Casino Server is running on port ${PORT}`);
 });
