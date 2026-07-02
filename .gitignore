@@ -1,0 +1,9 @@
+# Ignore the giant dependency folder
+node_modules/
+
+# Ignore the actual database file (keep money safe!)
+casino.db
+
+# Ignore Mac/Windows system files
+.DS_Store
+Thumbs.db

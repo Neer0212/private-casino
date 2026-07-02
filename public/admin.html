@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>God Mode - Admin Panel</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background-color: #000; color: #00ff00; padding: 40px; }
+        h1 { border-bottom: 2px solid #00ff00; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 18px; }
+        th, td { border: 1px solid #00ff00; padding: 10px; text-align: left; }
+        th { background-color: #003300; }
+        .control-panel { background-color: #111; padding: 20px; border: 1px solid #00ff00; margin-top: 30px; }
+        input, button { padding: 10px; font-size: 16px; margin: 5px; background: #000; border: 1px solid #00ff00; color: #00ff00; }
+        button { cursor: pointer; font-weight: bold; }
+        button:hover { background: #00ff00; color: #000; }
+    </style>
+</head>
+<body>
+
+    <h1>🔒 CASINO MAINFRAME // ADMIN</h1>
+    
+    <div class="control-panel">
+        <h3>⚡ CHIP INJECTOR</h3>
+        <input type="text" id="targetUser" placeholder="Target Username">
+        <input type="number" id="chipAmount" placeholder="Amount (e.g. 5000)">
+        <button onclick="injectChips()">EXECUTE INJECTION</button>
+    </div>
+
+    <h2>👥 DATABASE RECORDS</h2>
+    <table id="userTable">
+        <tr>
+            <th>Username</th>
+            <th>Current Balance</th>
+        </tr>
+        </table>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Ask the server for the user list immediately upon loading the page
+        socket.emit('adminGetUsers');
+
+        // Catch the user list from the server and build the table
+        socket.on('adminUserData', (users) => {
+            let tableHTML = `<tr><th>Username</th><th>Current Balance</th></tr>`;
+            users.forEach(user => {
+                tableHTML += `<tr>
+                                <td>${user.username}</td>
+                                <td>$${user.balance}</td>
+                              </tr>`;
+            });
+            document.getElementById('userTable').innerHTML = tableHTML;
+        });
+
+        // Tell the server to add chips
+        function injectChips() {
+            const user = document.getElementById('targetUser').value;
+            const amount = document.getElementById('chipAmount').value;
+
+            if (user && amount) {
+                socket.emit('adminAddChips', { targetUser: user, amount: amount });
+                document.getElementById('targetUser').value = ""; // clear input
+                document.getElementById('chipAmount').value = ""; // clear input
+            }
+        }
+    </script>
+</body>
+</html>
