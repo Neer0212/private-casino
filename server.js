@@ -22,7 +22,6 @@ pool.query(`CREATE TABLE IF NOT EXISTS users (
 )`).then(() => console.log("☁️ Connected to the Permanent Cloud Database!"))
   .catch(err => console.error("Database connection error:", err));
 
-// --- API ROUTES ---
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const result = await pool.query(`SELECT username, balance FROM users ORDER BY balance DESC LIMIT 10`);
@@ -32,9 +31,9 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// --- GAME STATE MEMORY (NOW MULTI-ROOM) ---
+// --- GAME STATE MEMORY ---
 let activePlayers = []; 
-let tableStates = {}; // Tracks separate decks and dealers for every custom table
+let tableStates = {}; 
 
 const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -56,9 +55,9 @@ function calculateScore(hand) {
     return score;
 }
 
-// Ensures a table exists in memory before dealing
 function initTable(tableId) {
     if (!tableStates[tableId]) {
+        console.log(`🎰 Spinning up new room: ${tableId}`);
         tableStates[tableId] = {
             deck: createDeck(),
             dealer: { hand: [], score: 0 }
@@ -66,9 +65,9 @@ function initTable(tableId) {
     }
 }
 
-// Draws a card from a specific table's deck
 function drawCard(tableId) {
-    if (tableStates[tableId].deck.length < 10) {
+    if (!tableStates[tableId] || tableStates[tableId].deck.length < 10) {
+        if (!tableStates[tableId]) initTable(tableId); // Safety fallback
         tableStates[tableId].deck = createDeck();
     }
     return tableStates[tableId].deck.pop();
@@ -124,7 +123,6 @@ async function checkRoundEnd(tableId) {
             }
         }
         
-        // Reset dealer for this specific table
         tableStates[tableId].dealer = { hand: [], score: 0 };
         broadcastTableState(tableId);
     }
@@ -134,9 +132,15 @@ async function checkRoundEnd(tableId) {
 io.on('connection', (socket) => {
     
     socket.on('joinTable', async (data) => {
-        const { tableId, username, betAmount } = data;
+        // Enforce strict fallback on the server just in case
+        const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "Public-1";
+        const username = data.username;
+        const betAmount = data.betAmount;
+        
+        console.log(`👤 ${username} is attempting to join ${tableId}`);
+        
         socket.join(tableId);
-        initTable(tableId); // Ensure room memory exists
+        initTable(tableId); 
 
         try {
             const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
@@ -158,7 +162,6 @@ io.on('connection', (socket) => {
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
             activePlayers.push(player);
 
-            // Deal dealer cards if it's a fresh round
             if (tableStates[tableId].dealer.hand.length === 0) {
                 tableStates[tableId].dealer.hand = [drawCard(tableId), drawCard(tableId)];
                 tableStates[tableId].dealer.score = calculateScore(tableStates[tableId].dealer.hand);
@@ -167,7 +170,8 @@ io.on('connection', (socket) => {
             socket.emit('dealCards', player);
             broadcastTableState(tableId);
         } catch (err) {
-            console.error("Join Table Error:", err);
+            console.error("🔥 Database/Join Error:", err);
+            socket.emit('gameStatus', "Error connecting to vault. Check server logs.");
         }
     });
 
@@ -230,9 +234,9 @@ io.on('connection', (socket) => {
             broadcastTableState(tableId); 
             checkRoundEnd(tableId); 
             
-            // Clean up room memory if table is empty
             if (activePlayers.filter(p => p.tableId === tableId).length === 0) {
                 delete tableStates[tableId];
+                console.log(`🧹 Cleaning up empty room: ${tableId}`);
             }
         }
     });
