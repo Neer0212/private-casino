@@ -1,54 +1,50 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg'); // Changed from sqlite3
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve frontend files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- DATABASE SETUP ---
-const db = new sqlite3.Database('./casino.db', (err) => {
-    if (err) console.error("Database error:", err.message);
-    else console.log("Connected to the SQLite database.");
+// --- CLOUD DATABASE SETUP ---
+// This tells the server to use the URL from Render, or a local one if testing
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false } // Required for cloud databases
 });
 
-db.run(`CREATE TABLE IF NOT EXISTS users (
-    username TEXT UNIQUE,
+// Create the table in the cloud
+pool.query(`CREATE TABLE IF NOT EXISTS users (
+    username VARCHAR(255) UNIQUE,
     balance INTEGER
-)`);
+)`).then(() => console.log("☁️ Connected to the Permanent Cloud Database!"))
+  .catch(err => console.error("Database connection error:", err));
+
 
 // --- GAME STATE MEMORY ---
-let activePlayers = []; // Tracks everyone currently sitting at a table
+let activePlayers = []; 
 let dealerState = { hand: [], score: 0 };
 const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-// --- ENGINE HELPER FUNCTIONS ---
 function createDeck() {
     let deck = [];
-    for (let suit of suits) {
-        for (let value of values) deck.push({ suit, value });
-    }
-    return deck.sort(() => Math.random() - 0.5); // Shuffle
+    for (let suit of suits) for (let value of values) deck.push({ suit, value });
+    return deck.sort(() => Math.random() - 0.5); 
 }
 
 function calculateScore(hand) {
-    let score = 0;
-    let aces = 0;
+    let score = 0, aces = 0;
     for (let card of hand) {
         if (['J', 'Q', 'K'].includes(card.value)) score += 10;
         else if (card.value === 'A') { score += 11; aces += 1; }
         else score += parseInt(card.value);
     }
-    while (score > 21 && aces > 0) { // Handle dynamic Aces
-        score -= 10;
-        aces -= 1;
-    }
+    while (score > 21 && aces > 0) { score -= 10; aces -= 1; }
     return score;
 }
 
@@ -58,7 +54,6 @@ function drawCard() {
     return currentDeck.pop();
 }
 
-// THE MULTIPLAYER BROADCAST
 function broadcastTableState(tableId) {
     const playersAtTable = activePlayers.filter(p => p.tableId === tableId);
     io.to(tableId).emit('tableStateUpdate', playersAtTable);
@@ -67,47 +62,48 @@ function broadcastTableState(tableId) {
 // --- SOCKET CONNECTIONS ---
 io.on('connection', (socket) => {
     
-    // 1. PLAYER JOINS TABLE
-    socket.on('joinTable', (data) => {
+    // 1. PLAYER JOINS TABLE (Async/Await used for Cloud DB)
+    socket.on('joinTable', async (data) => {
         const { tableId, username, betAmount } = data;
         socket.join(tableId);
 
-        // Handle Database Economy
-        db.get(`SELECT balance FROM users WHERE username = ?`, [username], (err, row) => {
-            let balance = 1000; // New user starting balance
-            if (row) balance = row.balance;
-            else db.run(`INSERT INTO users (username, balance) VALUES (?, ?)`, [username, balance]);
+        try {
+            // Check cloud database for user ($1 is Postgres syntax for variables)
+            const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
+            let balance = 1000; 
+
+            if (res.rows.length > 0) {
+                balance = res.rows[0].balance; // Existing user
+            } else {
+                // New user
+                await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, balance]);
+            }
 
             // Deduct bet
             balance -= parseInt(betAmount);
-            db.run(`UPDATE users SET balance = ? WHERE username = ?`, [balance, username]);
+            await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [balance, username]);
             socket.emit('updateBalance', balance);
 
             // Create Player Profile
             const player = {
-                socketId: socket.id,
-                username,
-                tableId,
-                bet: parseInt(betAmount),
-                hand: [drawCard(), drawCard()],
-                status: 'playing'
+                socketId: socket.id, username, tableId,
+                bet: parseInt(betAmount), hand: [drawCard(), drawCard()], status: 'playing'
             };
             player.score = calculateScore(player.hand);
             
-            // Remove old instance if they reconnected, add new one
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
             activePlayers.push(player);
 
-            // Initialize Dealer if needed
             if (dealerState.hand.length === 0) {
                 dealerState.hand = [drawCard(), drawCard()];
                 dealerState.score = calculateScore(dealerState.hand);
             }
 
-            // Send cards to the player, and broadcast the table to everyone
             socket.emit('dealCards', player);
             broadcastTableState(tableId);
-        });
+        } catch (err) {
+            console.error("Join Table Error:", err);
+        }
     });
 
     // 2. PLAYER HITS
@@ -128,13 +124,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 3. PLAYER STANDS (Dealer plays out)
-    socket.on('stand', (tableId) => {
+    // 3. PLAYER STANDS
+    socket.on('stand', async (tableId) => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player && player.status === 'playing') {
             player.status = 'stood';
             
-            // Dealer AI logic
             while (dealerState.score < 17) {
                 dealerState.hand.push(drawCard());
                 dealerState.score = calculateScore(dealerState.hand);
@@ -157,63 +152,62 @@ io.on('connection', (socket) => {
 
             socket.emit('gameStatus', msg);
 
-            // Pay the winner
+            // Pay the winner in the Cloud DB
             if (winAmount > 0) {
-                db.get(`SELECT balance FROM users WHERE username = ?`, [player.username], (err, row) => {
-                    if (row) {
-                        const newBalance = row.balance + winAmount;
-                        db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newBalance, player.username]);
+                try {
+                    const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [player.username]);
+                    if (res.rows.length > 0) {
+                        const newBalance = res.rows[0].balance + winAmount;
+                        await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, player.username]);
                         socket.emit('updateBalance', newBalance);
                     }
-                });
+                } catch (err) { console.error("Payout Error:", err); }
             }
             
-            dealerState.hand = []; // Reset dealer for next round
+            dealerState.hand = []; 
             broadcastTableState(tableId);
         }
     });
 
-    // --- LIVE CHAT LOGIC ---
+    // --- LIVE CHAT ---
     socket.on('sendChat', (data) => {
-        const { tableId, username, message } = data;
-        io.to(tableId).emit('receiveChat', { username, message });
+        io.to(data.tableId).emit('receiveChat', { username: data.username, message: data.message });
     });
 
-    // --- GOD MODE ADMIN LOGIC ---
-    socket.on('adminGetUsers', () => {
-        db.all(`SELECT * FROM users ORDER BY balance DESC`, [], (err, rows) => {
-            if (!err) socket.emit('adminUserData', rows);
-        });
+    // --- GOD MODE ADMIN ---
+    socket.on('adminGetUsers', async () => {
+        try {
+            const res = await pool.query(`SELECT * FROM users ORDER BY balance DESC`);
+            socket.emit('adminUserData', res.rows);
+        } catch (err) { console.error(err); }
     });
 
-    socket.on('adminAddChips', (data) => {
+    socket.on('adminAddChips', async (data) => {
         const { targetUser, amount } = data;
         const numAmount = parseInt(amount);
 
-        db.get(`SELECT balance FROM users WHERE username = ?`, [targetUser], (err, row) => {
-            if (row) {
-                const newBalance = row.balance + numAmount;
-                db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newBalance, targetUser]);
+        try {
+            const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [targetUser]);
+            if (res.rows.length > 0) {
+                const newBalance = res.rows[0].balance + numAmount;
+                await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, targetUser]);
                 io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, added: numAmount });
-                db.all(`SELECT * FROM users ORDER BY balance DESC`, [], (err, rows) => {
-                    if (!err) socket.emit('adminUserData', rows);
-                });
+                
+                const allUsers = await pool.query(`SELECT * FROM users ORDER BY balance DESC`);
+                socket.emit('adminUserData', allUsers.rows);
             }
-        });
+        } catch (err) { console.error(err); }
     });
 
-    // --- CLEANUP DISCONNECTS ---
     socket.on('disconnect', () => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player) {
-            const tableId = player.tableId;
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
-            broadcastTableState(tableId); // Update table so friend disappears when they leave
+            broadcastTableState(player.tableId); 
         }
     });
 });
 
-// --- CLOUD PORT SETUP ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🎰 Casino Server is running on port ${PORT}`);
