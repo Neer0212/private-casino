@@ -10,6 +10,18 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// --- API ROUTES ---
+// This endpoint fetches the top 10 richest players in the database
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT username, balance FROM users ORDER BY balance DESC LIMIT 10`);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Leaderboard Fetch Error:", err);
+        res.status(500).json({ error: "Failed to load leaderboard" });
+    }
+});
+
 // --- CLOUD DATABASE SETUP ---
 // This tells the server to use the URL from Render, or a local one if testing
 const pool = new Pool({
