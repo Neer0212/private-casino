@@ -22,10 +22,20 @@ pool.query(`CREATE TABLE IF NOT EXISTS users (
 )`).then(() => console.log("☁️ Connected to the Permanent Cloud Database!"))
   .catch(err => console.error("Database connection error:", err));
 
+// --- API ROUTES ---
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT username, balance FROM users ORDER BY balance DESC LIMIT 10`);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to load leaderboard" });
+    }
+});
 
-// --- GAME STATE MEMORY ---
+// --- GAME STATE MEMORY (NOW MULTI-ROOM) ---
 let activePlayers = []; 
-let dealerState = { hand: [], score: 0 };
+let tableStates = {}; // Tracks separate decks and dealers for every custom table
+
 const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
@@ -46,10 +56,22 @@ function calculateScore(hand) {
     return score;
 }
 
-let currentDeck = createDeck();
-function drawCard() {
-    if (currentDeck.length < 10) currentDeck = createDeck();
-    return currentDeck.pop();
+// Ensures a table exists in memory before dealing
+function initTable(tableId) {
+    if (!tableStates[tableId]) {
+        tableStates[tableId] = {
+            deck: createDeck(),
+            dealer: { hand: [], score: 0 }
+        };
+    }
+}
+
+// Draws a card from a specific table's deck
+function drawCard(tableId) {
+    if (tableStates[tableId].deck.length < 10) {
+        tableStates[tableId].deck = createDeck();
+    }
+    return tableStates[tableId].deck.pop();
 }
 
 function broadcastTableState(tableId) {
@@ -60,30 +82,27 @@ function broadcastTableState(tableId) {
 // --- SYNCHRONIZED ROUND LOGIC ---
 async function checkRoundEnd(tableId) {
     const tablePlayers = activePlayers.filter(p => p.tableId === tableId);
-    // Check if anyone at the table is still making decisions
     const isAnyonePlaying = tablePlayers.some(p => p.status === 'playing');
     
-    // If everyone is done (stood or bust), the dealer finally plays!
     if (!isAnyonePlaying && tablePlayers.length > 0) {
+        let dealer = tableStates[tableId].dealer;
         
-        while (dealerState.score < 17) {
-            dealerState.hand.push(drawCard());
-            dealerState.score = calculateScore(dealerState.hand);
+        while (dealer.score < 17) {
+            dealer.hand.push(drawCard(tableId));
+            dealer.score = calculateScore(dealer.hand);
         }
 
-        // Reveal dealer to the whole table at once
-        io.to(tableId).emit('dealerPlayed', dealerState);
+        io.to(tableId).emit('dealerPlayed', dealer);
 
-        // Calculate wins/losses for everyone who didn't already bust
         for (let player of tablePlayers) {
             if (player.status === 'stood') {
                 let msg = "";
                 let winAmount = 0;
 
-                if (dealerState.score > 21 || player.score > dealerState.score) {
+                if (dealer.score > 21 || player.score > dealer.score) {
                     msg = "YOU WIN!";
                     winAmount = player.bet * 2;
-                } else if (player.score === dealerState.score) {
+                } else if (player.score === dealer.score) {
                     msg = "PUSH (Tie).";
                     winAmount = player.bet;
                 } else {
@@ -92,7 +111,6 @@ async function checkRoundEnd(tableId) {
 
                 io.to(player.socketId).emit('gameStatus', msg);
 
-                // Pay out to the permanent database
                 if (winAmount > 0) {
                     try {
                         const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [player.username]);
@@ -106,9 +124,8 @@ async function checkRoundEnd(tableId) {
             }
         }
         
-        // Reset the dealer for the next round
-        dealerState.hand = [];
-        dealerState.score = 0;
+        // Reset dealer for this specific table
+        tableStates[tableId].dealer = { hand: [], score: 0 };
         broadcastTableState(tableId);
     }
 }
@@ -119,16 +136,14 @@ io.on('connection', (socket) => {
     socket.on('joinTable', async (data) => {
         const { tableId, username, betAmount } = data;
         socket.join(tableId);
+        initTable(tableId); // Ensure room memory exists
 
         try {
             const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
             let balance = 1000; 
 
-            if (res.rows.length > 0) {
-                balance = res.rows[0].balance; 
-            } else {
-                await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, balance]);
-            }
+            if (res.rows.length > 0) balance = res.rows[0].balance; 
+            else await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, balance]);
 
             balance -= parseInt(betAmount);
             await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [balance, username]);
@@ -136,16 +151,17 @@ io.on('connection', (socket) => {
 
             const player = {
                 socketId: socket.id, username, tableId,
-                bet: parseInt(betAmount), hand: [drawCard(), drawCard()], status: 'playing'
+                bet: parseInt(betAmount), hand: [drawCard(tableId), drawCard(tableId)], status: 'playing'
             };
             player.score = calculateScore(player.hand);
             
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
             activePlayers.push(player);
 
-            if (dealerState.hand.length === 0) {
-                dealerState.hand = [drawCard(), drawCard()];
-                dealerState.score = calculateScore(dealerState.hand);
+            // Deal dealer cards if it's a fresh round
+            if (tableStates[tableId].dealer.hand.length === 0) {
+                tableStates[tableId].dealer.hand = [drawCard(tableId), drawCard(tableId)];
+                tableStates[tableId].dealer.score = calculateScore(tableStates[tableId].dealer.hand);
             }
 
             socket.emit('dealCards', player);
@@ -158,7 +174,7 @@ io.on('connection', (socket) => {
     socket.on('hit', (tableId) => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player && player.status === 'playing') {
-            player.hand.push(drawCard());
+            player.hand.push(drawCard(tableId));
             player.score = calculateScore(player.hand);
             
             socket.emit('dealCards', player);
@@ -168,63 +184,56 @@ io.on('connection', (socket) => {
                 player.status = 'bust';
                 socket.emit('gameStatus', 'BUST! You lose.');
                 broadcastTableState(tableId);
-                checkRoundEnd(tableId); // Check if this bust ends the round for everyone else
+                checkRoundEnd(tableId);
             }
         }
     });
 
-    socket.on('stand', async (tableId) => {
+    socket.on('stand', (tableId) => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player && player.status === 'playing') {
             player.status = 'stood';
-            
-            // Give them a waiting message while their friends finish
             socket.emit('gameStatus', 'Waiting for other players...');
             broadcastTableState(tableId);
-            
-            // Check if everyone is done
             checkRoundEnd(tableId); 
         }
     });
 
-    // --- LIVE CHAT ---
     socket.on('sendChat', (data) => {
         io.to(data.tableId).emit('receiveChat', { username: data.username, message: data.message });
     });
 
-    // --- GOD MODE ADMIN ---
     socket.on('adminGetUsers', async () => {
         try {
             const res = await pool.query(`SELECT * FROM users ORDER BY balance DESC`);
             socket.emit('adminUserData', res.rows);
-        } catch (err) { console.error(err); }
+        } catch (err) {}
     });
 
     socket.on('adminAddChips', async (data) => {
         const { targetUser, amount } = data;
-        const numAmount = parseInt(amount);
-
         try {
             const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [targetUser]);
             if (res.rows.length > 0) {
-                const newBalance = res.rows[0].balance + numAmount;
+                const newBalance = res.rows[0].balance + parseInt(amount);
                 await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, targetUser]);
-                io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, added: numAmount });
-                
-                const allUsers = await pool.query(`SELECT * FROM users ORDER BY balance DESC`);
-                socket.emit('adminUserData', allUsers.rows);
+                io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, added: parseInt(amount) });
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {}
     });
 
-    // --- CLEAN DISCONNECTS ---
     socket.on('disconnect', () => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player) {
             const tableId = player.tableId;
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
             broadcastTableState(tableId); 
-            checkRoundEnd(tableId); // If they quit mid-game, let the remaining players finish
+            checkRoundEnd(tableId); 
+            
+            // Clean up room memory if table is empty
+            if (activePlayers.filter(p => p.tableId === tableId).length === 0) {
+                delete tableStates[tableId];
+            }
         }
     });
 });

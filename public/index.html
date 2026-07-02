@@ -15,63 +15,35 @@
         .card { width: 80px; height: 115px; background-color: white; border-radius: 8px; border: 1px solid #ccc; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; position: relative; background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%); }
         .red { color: #d63031; } .black { color: #2d3436; }
         .card::before { content: attr(data-value); position: absolute; top: 5px; left: 8px; font-size: 16px; }
-    /* --- CHAT WIDGET RESPONSIVENESS --- */
-        .chat-widget {
-            background: rgba(0,0,0,0.9);
-            border: 2px solid #55efc4;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: left;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            z-index: 1000;
-            
-            /* Desktop Default: Floating bottom right */
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 320px;
-        }
 
-        /* Mobile Override: When screen is smaller than 768px */
+        /* --- CHAT WIDGET RESPONSIVENESS --- */
+        .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #55efc4; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; position: fixed; bottom: 20px; right: 20px; width: 320px; }
         @media (max-width: 768px) {
-            .chat-widget {
-                position: relative; /* Stops it from floating */
-                bottom: auto;
-                right: auto;
-                width: 90%;
-                margin: 20px auto; /* Centers it perfectly below the table */
-            }
-            
-            /* Let's also shrink the table borders slightly for mobile to save space */
-            .table {
-                border-width: 5px;
-                padding: 15px;
-                border-radius: 50px;
-            }
+            .chat-widget { position: relative; bottom: auto; right: auto; width: 90%; margin: 20px auto; box-sizing: border-box;}
+            .table { border-width: 5px; padding: 15px; border-radius: 50px; width: 95%; }
         }
-    
     </style>
 </head>
 <body>
 
     <h1 style="color: #f1c40f; letter-spacing: 2px;">♠️ VIP BLACKJACK ♣️</h1>
     <div style="margin-bottom: 20px;">
-    <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px;">🏆 View Global Leaderboard</a>
-</div>
-
+        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px;">🏆 View Global Leaderboard</a>
+    </div>
+    
     <div class="table">
         <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: inline-block;">
             <input type="text" id="usernameInput" placeholder="Enter Username">
-            <input type="number" id="betInput" placeholder="Bet (e.g. 50)" style="width: 120px;">
-            <button onclick="sitAtTable()">Place Bet & Play</button>
+            <input type="text" id="roomInput" placeholder="Table Name (e.g. VIP-1)" style="width: 180px;">
+            <input type="number" id="betInput" placeholder="Bet" style="width: 80px;">
+            <button onclick="sitAtTable()">Join Table</button>
             <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Not sitting at a table...</h2>
         </div>
 
         <h2 style="color: #55efc4; font-size: 28px; margin: 15px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
         
-        <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;">
-            </div>
+        <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;"></div>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
 
         <h3 style="color: #ffcc00; letter-spacing: 1px;">THE DEALER</h3>
@@ -90,7 +62,7 @@
     </div>
 
     <div id="chatWidget" class="chat-widget">
-        <h4 style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">🔴 VIP Table Chat</h4>
+        <h4 style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">🔴 <span id="chatRoomName">VIP Table</span> Chat</h4>
         <div id="chatHistory" style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;"></div>
         <div style="display: flex; gap: 5px;">
             <input type="text" id="chatInput" placeholder="Talk trash here..." style="width: 75%; padding: 8px; margin: 0; font-size: 14px; background: #222; color: white;">
@@ -101,7 +73,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let currentTable = "Table-1"; 
+        let currentTable = ""; 
 
         function createCardHTML(cardData) {
             let symbol = "", colorClass = "";
@@ -115,25 +87,30 @@
                     </div>`;
         }
 
-        // --- GAME ACTIONS ---
         function sitAtTable() {
             const username = document.getElementById('usernameInput').value;
             const betAmount = document.getElementById('betInput').value;
+            const roomInput = document.getElementById('roomInput').value.trim();
+            
             if (!username || !betAmount) return alert("Enter a username and bet!");
+            
+            // If they leave it blank, default to "Public-1"
+            currentTable = roomInput !== "" ? roomInput : "Public-1";
             
             socket.emit('joinTable', { tableId: currentTable, username, betAmount });
             
-            document.getElementById('status').innerText = `Playing as ${username}`;
+            document.getElementById('status').innerText = `Playing as ${username} at ${currentTable}`;
+            document.getElementById('chatRoomName').innerText = currentTable;
             document.getElementById('gameStatus').innerText = ""; 
             document.getElementById('dealerMessages').innerText = "Dealer waiting...";
             document.getElementById('dealerCards').innerHTML = ""; 
             document.getElementById('actionButtons').style.display = "none";
+            document.getElementById('chatHistory').innerHTML = ""; // Clear chat from old table
         }
 
         function hit() { socket.emit('hit', currentTable); }
         function stand() { socket.emit('stand', currentTable); }
 
-        // --- GAME LISTENERS ---
         socket.on('updateBalance', (bal) => document.getElementById('balanceDisplay').innerText = bal);
 
         socket.on('dealCards', (data) => {
@@ -158,7 +135,6 @@
             document.getElementById('actionButtons').style.display = "none";
         });
 
-        // --- MULTIPLAYER TABLE VIEW ---
         socket.on('tableStateUpdate', (allPlayers) => {
             const otherPlayersDiv = document.getElementById('otherPlayers');
             const myUsername = document.getElementById('usernameInput').value;
@@ -181,11 +157,10 @@
             otherPlayersDiv.innerHTML = otherPlayersHTML;
         });
 
-        // --- CHAT & ADMIN LISTENERS ---
         function sendChat() {
             const input = document.getElementById('chatInput');
             const username = document.getElementById('usernameInput').value || "Anon";
-            if (input.value.trim() !== "") {
+            if (input.value.trim() !== "" && currentTable !== "") {
                 socket.emit('sendChat', { tableId: currentTable, username, message: input.value });
                 input.value = "";
             }
