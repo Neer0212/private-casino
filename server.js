@@ -31,10 +31,16 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// --- GAME STATE MEMORY ---
+// ==========================================
+// GAME STATE MEMORY
+// ==========================================
 let activePlayers = []; 
-let tableStates = {}; 
+let tableStates = {}; // Blackjack Tables
+let rouletteTables = {}; // Roulette Tables
 
+// ==========================================
+// BLACKJACK ENGINE
+// ==========================================
 const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
@@ -57,57 +63,41 @@ function calculateScore(hand) {
 
 function initTable(tableId) {
     if (!tableStates[tableId]) {
-        console.log(`🎰 Spinning up new room: ${tableId}`);
-        tableStates[tableId] = {
-            deck: createDeck(),
-            dealer: { hand: [], score: 0 }
-        };
+        tableStates[tableId] = { deck: createDeck(), dealer: { hand: [], score: 0 } };
     }
 }
 
 function drawCard(tableId) {
     if (!tableStates[tableId] || tableStates[tableId].deck.length < 10) {
-        if (!tableStates[tableId]) initTable(tableId); // Safety fallback
+        if (!tableStates[tableId]) initTable(tableId); 
         tableStates[tableId].deck = createDeck();
     }
     return tableStates[tableId].deck.pop();
 }
 
 function broadcastTableState(tableId) {
-    const playersAtTable = activePlayers.filter(p => p.tableId === tableId);
+    const playersAtTable = activePlayers.filter(p => p.tableId === tableId && p.game === 'blackjack');
     io.to(tableId).emit('tableStateUpdate', playersAtTable);
 }
 
-// --- SYNCHRONIZED ROUND LOGIC ---
 async function checkRoundEnd(tableId) {
-    const tablePlayers = activePlayers.filter(p => p.tableId === tableId);
+    const tablePlayers = activePlayers.filter(p => p.tableId === tableId && p.game === 'blackjack');
     const isAnyonePlaying = tablePlayers.some(p => p.status === 'playing');
     
     if (!isAnyonePlaying && tablePlayers.length > 0) {
         let dealer = tableStates[tableId].dealer;
-        
         while (dealer.score < 17) {
             dealer.hand.push(drawCard(tableId));
             dealer.score = calculateScore(dealer.hand);
         }
-
         io.to(tableId).emit('dealerPlayed', dealer);
 
         for (let player of tablePlayers) {
             if (player.status === 'stood') {
-                let msg = "";
-                let winAmount = 0;
-
-                if (dealer.score > 21 || player.score > dealer.score) {
-                    msg = "YOU WIN!";
-                    winAmount = player.bet * 2;
-                } else if (player.score === dealer.score) {
-                    msg = "PUSH (Tie).";
-                    winAmount = player.bet;
-                } else {
-                    msg = "DEALER WINS. You lose.";
-                }
-
+                let msg = "", winAmount = 0;
+                if (dealer.score > 21 || player.score > dealer.score) { msg = "YOU WIN!"; winAmount = player.bet * 2; }
+                else if (player.score === dealer.score) { msg = "PUSH (Tie)."; winAmount = player.bet; }
+                else { msg = "DEALER WINS. You lose."; }
                 io.to(player.socketId).emit('gameStatus', msg);
 
                 if (winAmount > 0) {
@@ -118,45 +108,60 @@ async function checkRoundEnd(tableId) {
                             await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, player.username]);
                             io.to(player.socketId).emit('updateBalance', newBalance);
                         }
-                    } catch (err) { console.error("Payout Error:", err); }
+                    } catch (err) { console.error(err); }
                 }
             }
         }
-        
         tableStates[tableId].dealer = { hand: [], score: 0 };
         broadcastTableState(tableId);
     }
 }
 
-// --- SOCKET CONNECTIONS ---
+// ==========================================
+// ROULETTE ENGINE
+// ==========================================
+const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+
+function getRouletteColor(num) {
+    if (num === 0) return 'Green';
+    return redNumbers.includes(num) ? 'Red' : 'Black';
+}
+
+function broadcastRouletteState(tableId) {
+    const players = activePlayers.filter(p => p.tableId === tableId && p.game === 'roulette');
+    io.to(tableId).emit('rouletteStateUpdate', players);
+}
+
+// ==========================================
+// SOCKET CONNECTIONS
+// ==========================================
 io.on('connection', (socket) => {
     
+    // --- COMMON DB CHECK ---
+    async function getUserBalance(username) {
+        const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
+        if (res.rows.length > 0) return res.rows[0].balance;
+        await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, 1000]);
+        return 1000;
+    }
+
+    async function updateBalance(username, newBalance) {
+        await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, username]);
+        socket.emit('updateBalance', newBalance);
+    }
+
+    // --- BLACKJACK LISTENERS ---
     socket.on('joinTable', async (data) => {
-        // Enforce strict fallback on the server just in case
         const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "Public-1";
-        const username = data.username;
-        const betAmount = data.betAmount;
-        
-        console.log(`👤 ${username} is attempting to join ${tableId}`);
-        
         socket.join(tableId);
         initTable(tableId); 
 
         try {
-            const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
-            let balance = 1000; 
+            let balance = await getUserBalance(data.username);
+            balance -= parseInt(data.betAmount);
+            await updateBalance(data.username, balance);
 
-            if (res.rows.length > 0) balance = res.rows[0].balance; 
-            else await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, balance]);
-
-            balance -= parseInt(betAmount);
-            await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [balance, username]);
-            socket.emit('updateBalance', balance);
-
-            const player = {
-                socketId: socket.id, username, tableId,
-                bet: parseInt(betAmount), hand: [drawCard(tableId), drawCard(tableId)], status: 'playing'
-            };
+            const player = { socketId: socket.id, username: data.username, tableId, bet: parseInt(data.betAmount), hand: [drawCard(tableId), drawCard(tableId)], status: 'playing', game: 'blackjack' };
             player.score = calculateScore(player.hand);
             
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
@@ -169,21 +174,16 @@ io.on('connection', (socket) => {
 
             socket.emit('dealCards', player);
             broadcastTableState(tableId);
-        } catch (err) {
-            console.error("🔥 Database/Join Error:", err);
-            socket.emit('gameStatus', "Error connecting to vault. Check server logs.");
-        }
+        } catch (err) { console.error(err); }
     });
 
     socket.on('hit', (tableId) => {
-        let player = activePlayers.find(p => p.socketId === socket.id);
+        let player = activePlayers.find(p => p.socketId === socket.id && p.game === 'blackjack');
         if (player && player.status === 'playing') {
             player.hand.push(drawCard(tableId));
             player.score = calculateScore(player.hand);
-            
             socket.emit('dealCards', player);
             broadcastTableState(tableId);
-
             if (player.score > 21) {
                 player.status = 'bust';
                 socket.emit('gameStatus', 'BUST! You lose.');
@@ -194,7 +194,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('stand', (tableId) => {
-        let player = activePlayers.find(p => p.socketId === socket.id);
+        let player = activePlayers.find(p => p.socketId === socket.id && p.game === 'blackjack');
         if (player && player.status === 'playing') {
             player.status = 'stood';
             socket.emit('gameStatus', 'Waiting for other players...');
@@ -203,46 +203,97 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('sendChat', (data) => {
-        io.to(data.tableId).emit('receiveChat', { username: data.username, message: data.message });
+    // --- ROULETTE LISTENERS ---
+    socket.on('joinRoulette', async (data) => {
+        const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "Roulette-1";
+        socket.join(tableId);
+        
+        try {
+            let balance = await getUserBalance(data.username);
+            socket.emit('updateBalance', balance);
+            
+            const player = { socketId: socket.id, username: data.username, tableId, bet: 0, target: null, status: 'waiting', game: 'roulette' };
+            activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
+            activePlayers.push(player);
+            broadcastRouletteState(tableId);
+        } catch (err) { console.error(err); }
     });
 
-    socket.on('adminGetUsers', async () => {
-        try {
-            const res = await pool.query(`SELECT * FROM users ORDER BY balance DESC`);
-            socket.emit('adminUserData', res.rows);
-        } catch (err) {}
+    socket.on('placeRouletteBet', async (data) => {
+        let player = activePlayers.find(p => p.socketId === socket.id && p.game === 'roulette');
+        if (player) {
+            try {
+                let balance = await getUserBalance(player.username);
+                if (balance >= data.betAmount) {
+                    balance -= parseInt(data.betAmount);
+                    await updateBalance(player.username, balance);
+                    player.bet = parseInt(data.betAmount);
+                    player.target = data.target.toString().toLowerCase(); // e.g., 'red', 'black', '17'
+                    player.status = 'bet_placed';
+                    broadcastRouletteState(player.tableId);
+                }
+            } catch (err) { console.error(err); }
+        }
     });
 
-    socket.on('adminAddChips', async (data) => {
-        const { targetUser, amount } = data;
-        try {
-            const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [targetUser]);
-            if (res.rows.length > 0) {
-                const newBalance = res.rows[0].balance + parseInt(amount);
-                await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, targetUser]);
-                io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, added: parseInt(amount) });
+    socket.on('spinRoulette', async (tableId) => {
+        // Find everyone at this table who placed a bet
+        let bettors = activePlayers.filter(p => p.tableId === tableId && p.game === 'roulette' && p.status === 'bet_placed');
+        if (bettors.length === 0) return;
+
+        // The Wheel Spins! (0 to 36)
+        const winningNumber = Math.floor(Math.random() * 37);
+        const winningColor = getRouletteColor(winningNumber).toLowerCase();
+        const isEven = winningNumber !== 0 && winningNumber % 2 === 0;
+
+        io.to(tableId).emit('rouletteResult', { number: winningNumber, color: winningColor });
+
+        // Calculate payouts
+        for (let player of bettors) {
+            let winAmount = 0;
+            let target = player.target;
+
+            if (target === winningNumber.toString()) winAmount = player.bet * 36; // Straight up number (35:1 + original bet)
+            else if (target === winningColor) winAmount = player.bet * 2; // Color bet
+            else if (target === 'even' && isEven) winAmount = player.bet * 2;
+            else if (target === 'odd' && !isEven && winningNumber !== 0) winAmount = player.bet * 2;
+
+            if (winAmount > 0) {
+                try {
+                    let balance = await getUserBalance(player.username);
+                    balance += winAmount;
+                    await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [balance, player.username]);
+                    io.to(player.socketId).emit('updateBalance', balance);
+                    io.to(player.socketId).emit('gameStatus', `WINNER! Payout: ₹${winAmount}`);
+                } catch (err) {}
+            } else {
+                io.to(player.socketId).emit('gameStatus', `Loss. Better luck next time.`);
             }
-        } catch (err) {}
+            
+            player.bet = 0;
+            player.target = null;
+            player.status = 'waiting';
+        }
+        
+        setTimeout(() => broadcastRouletteState(tableId), 3000); // Broadcast reset after 3 seconds
     });
+
+    // --- SHARED LISTENERS ---
+    socket.on('sendChat', (data) => { io.to(data.tableId).emit('receiveChat', { username: data.username, message: data.message }); });
 
     socket.on('disconnect', () => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player) {
             const tableId = player.tableId;
             activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
-            broadcastTableState(tableId); 
-            checkRoundEnd(tableId); 
-            
-            if (activePlayers.filter(p => p.tableId === tableId).length === 0) {
-                delete tableStates[tableId];
-                console.log(`🧹 Cleaning up empty room: ${tableId}`);
+            if (player.game === 'blackjack') {
+                broadcastTableState(tableId); checkRoundEnd(tableId); 
+            } else if (player.game === 'roulette') {
+                broadcastRouletteState(tableId);
             }
         }
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🎰 Casino Server is running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🎰 Casino Server is running on port ${PORT}`));
