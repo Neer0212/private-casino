@@ -17,7 +17,17 @@
         .card::before { content: attr(data-value); position: absolute; top: 5px; left: 8px; font-size: 16px; }
 
         /* --- CHAT WIDGET RESPONSIVENESS --- */
-        .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #55efc4; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; position: fixed; bottom: 20px; right: 20px; width: 320px; }
+        .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #55efc4; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; position: fixed; bottom: 20px; right: 20px; width: 320px; }
+        
+        /* --- INSTRUCTIONS MODAL --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 999; justify-content: center; align-items: center; }
+        .modal-content { background: #222; border: 2px solid #f1c40f; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%; text-align: left; box-shadow: 0 10px 40px rgba(0,0,0,0.9); position: relative; }
+        .modal-content h2 { color: #f1c40f; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .modal-content h4 { color: #55efc4; margin-bottom: 5px; }
+        .modal-content p, .modal-content li { color: #ccc; font-size: 15px; line-height: 1.5; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; font-weight: bold; }
+        .close-btn:hover { color: #ff7675; }
+
         @media (max-width: 768px) {
             .chat-widget { position: relative; bottom: auto; right: auto; width: 90%; margin: 20px auto; box-sizing: border-box;}
             .table { border-width: 5px; padding: 15px; border-radius: 50px; width: 95%; }
@@ -27,8 +37,10 @@
 <body>
 
     <h1 style="color: #f1c40f; letter-spacing: 2px;">♠️ VIP BLACKJACK ♣️</h1>
-    <div style="margin-bottom: 20px;">
-        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px;">🏆 View Global Leaderboard</a>
+    
+    <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+        <button onclick="openInstructions()" style="background-color: transparent; border: 1px solid #3498db; color: #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px;">📖 How to Play</button>
+        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">🏆 Global Leaderboard</a>
     </div>
     
     <div class="table">
@@ -70,10 +82,38 @@
         </div>
     </div>
 
+    <div id="instructionsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeInstructions()">×</span>
+            <h2>Welcome to VIP Blackjack</h2>
+            
+            <h4>🤝 How to Connect</h4>
+            <ul>
+                <li><strong>Username:</strong> Pick a unique name. Your bank balance will save permanently to this name!</li>
+                <li><strong>Table Name:</strong> Want to play privately with friends? Type a secret room name (e.g., <em>Squad-A</em>) and tell your friends to type the exact same name. Leave it blank for a public table.</li>
+            </ul>
+
+            <h4>🃏 How to Play</h4>
+            <ul>
+                <li>The goal is to get your card score closer to <strong>21</strong> than the Dealer, without going over.</li>
+                <li><strong>HIT:</strong> Ask the dealer for another card to increase your score.</li>
+                <li><strong>STAND:</strong> Lock in your score and end your turn.</li>
+                <li>If you go over 21, you <strong>BUST</strong> and lose your bet immediately.</li>
+                <li>The Dealer must wait for <strong>all players</strong> at the table to finish before they reveal their cards.</li>
+            </ul>
+
+            <button onclick="closeInstructions()" style="width: 100%; margin-top: 15px; background: #55efc4;">Got it, let's play!</button>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         let currentTable = ""; 
+
+        // Modal Controls
+        function openInstructions() { document.getElementById('instructionsModal').style.display = 'flex'; }
+        function closeInstructions() { document.getElementById('instructionsModal').style.display = 'none'; }
 
         function createCardHTML(cardData) {
             let symbol = "", colorClass = "";
@@ -94,7 +134,6 @@
             
             if (!username || !betAmount) return alert("Enter a username and bet!");
             
-            // If they leave it blank, default to "Public-1"
             currentTable = roomInput !== "" ? roomInput : "Public-1";
             
             socket.emit('joinTable', { tableId: currentTable, username, betAmount });
@@ -105,7 +144,7 @@
             document.getElementById('dealerMessages').innerText = "Dealer waiting...";
             document.getElementById('dealerCards').innerHTML = ""; 
             document.getElementById('actionButtons').style.display = "none";
-            document.getElementById('chatHistory').innerHTML = ""; // Clear chat from old table
+            document.getElementById('chatHistory').innerHTML = ""; 
         }
 
         function hit() { socket.emit('hit', currentTable); }
