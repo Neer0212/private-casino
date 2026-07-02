@@ -15,6 +15,41 @@
         .card { width: 80px; height: 115px; background-color: white; border-radius: 8px; border: 1px solid #ccc; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; position: relative; background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%); }
         .red { color: #d63031; } .black { color: #2d3436; }
         .card::before { content: attr(data-value); position: absolute; top: 5px; left: 8px; font-size: 16px; }
+    /* --- CHAT WIDGET RESPONSIVENESS --- */
+        .chat-widget {
+            background: rgba(0,0,0,0.9);
+            border: 2px solid #55efc4;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+            
+            /* Desktop Default: Floating bottom right */
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+        }
+
+        /* Mobile Override: When screen is smaller than 768px */
+        @media (max-width: 768px) {
+            .chat-widget {
+                position: relative; /* Stops it from floating */
+                bottom: auto;
+                right: auto;
+                width: 90%;
+                margin: 20px auto; /* Centers it perfectly below the table */
+            }
+            
+            /* Let's also shrink the table borders slightly for mobile to save space */
+            .table {
+                border-width: 5px;
+                padding: 15px;
+                border-radius: 50px;
+            }
+        }
+    
     </style>
 </head>
 <body>
@@ -32,7 +67,7 @@
             <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Not sitting at a table...</h2>
         </div>
 
-        <h2 style="color: #55efc4; font-size: 28px; margin: 15px 0;">Bank: $<span id="balanceDisplay">0</span></h2>
+        <h2 style="color: #55efc4; font-size: 28px; margin: 15px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
         
         <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;">
@@ -54,7 +89,7 @@
         <h2 id="gameStatus" style="font-size: 32px; text-shadow: 2px 2px 4px #000; margin-top: 20px;"></h2>
     </div>
 
-    <div id="chatWidget" style="background: rgba(0,0,0,0.8); border: 2px solid #55efc4; border-radius: 10px; width: 320px; position: fixed; bottom: 20px; right: 20px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000;">
+    <div id="chatWidget" class="chat-widget">
         <h4 style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">🔴 VIP Table Chat</h4>
         <div id="chatHistory" style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;"></div>
         <div style="display: flex; gap: 5px;">
@@ -168,7 +203,7 @@
                 document.getElementById('balanceDisplay').innerText = data.newBalance;
                 const s = document.getElementById('gameStatus');
                 s.style.color = "#00d2d3";
-                s.innerText = `⚡ GOD MODE: Bank injected $${data.added}!`;
+                s.innerText = `⚡ GOD MODE: Bank injected ₹${data.added}!`;
             }
         });
     </script>
