@@ -1,312 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Private VIP Casino</title>
     <style>
-        /* The Casino Room */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #111;
-            /* Dark room */
-            color: white;
-            text-align: center;
-            padding: 30px;
-            margin: 0;
-        }
-
-        /* The Green Felt Table */
-        .table {
-            background: radial-gradient(circle, #2E8B57 0%, #1a5c36 100%);
-            padding: 30px;
-            border-radius: 150px;
-            /* Makes it an oval table */
-            width: 75%;
-            max-width: 900px;
-            margin: auto;
-            border: 15px solid #4a3018;
-            /* Wood rim */
-            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.8);
-        }
-
-        /* Buttons & Inputs */
-        button {
-            padding: 10px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-            border-radius: 5px;
-            border: none;
-            background-color: #f1c40f;
-            color: #111;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            background-color: #f39c12;
-            transform: scale(1.05);
-        }
-
-        input {
-            padding: 10px;
-            font-size: 16px;
-            margin: 5px;
-            border-radius: 5px;
-            border: none;
-        }
-
-        /* --- THE PLAYING CARDS --- */
-        .card-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 15px 0;
-            min-height: 120px;
-            /* Keeps the table from jumping around */
-        }
-
-        .card {
-            width: 80px;
-            height: 115px;
-            background-color: #1e1e1e;
-            /* Dark gray background */
-            border-radius: 8px;
-            border: 2px solid #f1c40f;
-            /* Gold border */
-            box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            font-weight: bold;
-            position: relative;
-            /* A subtle diagonal shine effect */
-            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
-        }
-
-        /* Adjust colors to pop on the dark background */
-        .red {
-            color: #ff4757;
-            text-shadow: 0 0 5px rgba(255, 71, 87, 0.5);
-        }
-
-        .black {
-            color: #dfe4ea;
-            text-shadow: 0 0 5px rgba(223, 228, 234, 0.5);
-        }
-
-        /* Card Colors */
-        .red {
-            color: #d63031;
-        }
-
-        .black {
-            color: #2d3436;
-        }
-
-        /* Tiny numbers in the corner of the cards */
-        .card::before {
-            content: attr(data-value);
-            position: absolute;
-            top: 5px;
-            left: 8px;
-            font-size: 16px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; text-align: center; padding: 20px; margin: 0; }
+        .table { background: radial-gradient(circle, #2E8B57 0%, #1a5c36 100%); padding: 30px; border-radius: 150px; width: 75%; max-width: 900px; margin: auto; border: 15px solid #4a3018; box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.8); }
+        button { padding: 10px 25px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 5px; border-radius: 5px; border: none; background-color: #f1c40f; color: #111; transition: 0.2s; }
+        button:hover { background-color: #f39c12; transform: scale(1.05); }
+        input { padding: 10px; font-size: 16px; margin: 5px; border-radius: 5px; border: none; }
+        
+        .card-container { display: flex; justify-content: center; gap: 10px; margin: 15px 0; min-height: 120px; }
+        .card { width: 80px; height: 115px; background-color: white; border-radius: 8px; border: 1px solid #ccc; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; position: relative; background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%); }
+        .red { color: #d63031; } .black { color: #2d3436; }
+        .card::before { content: attr(data-value); position: absolute; top: 5px; left: 8px; font-size: 16px; }
     </style>
 </head>
-
 <body>
 
     <h1 style="color: #f1c40f; letter-spacing: 2px;">♠️ VIP BLACKJACK ♣️</h1>
-
+    
     <div class="table">
         <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: inline-block;">
             <input type="text" id="usernameInput" placeholder="Enter Username">
             <input type="number" id="betInput" placeholder="Bet (e.g. 50)" style="width: 120px;">
             <button onclick="sitAtTable()">Place Bet & Play</button>
-            <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Not sitting at a
-                table...</h2>
-        </div>
-
-        <div id="chatWidget"
-            style="background: rgba(0,0,0,0.8); border: 2px solid #55efc4; border-radius: 10px; width: 320px; position: fixed; bottom: 20px; right: 20px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-            <h4
-                style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">
-                🔴 VIP Table Chat</h4>
-
-            <div id="chatHistory"
-                style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;">
-                <div style="color: #aaa; font-style: italic;">System: Welcome to the table...</div>
-            </div>
-
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="chatInput" placeholder="Talk trash here..."
-                    style="width: 75%; padding: 8px; margin: 0; font-size: 14px; background: #222; color: white;">
-                <button onclick="sendChat()"
-                    style="width: 25%; padding: 8px; margin: 0; font-size: 14px; background-color: #55efc4; color: black;">Send</button>
-            </div>
+            <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Not sitting at a table...</h2>
         </div>
 
         <h2 style="color: #55efc4; font-size: 28px; margin: 15px 0;">Bank: $<span id="balanceDisplay">0</span></h2>
-
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+        
+        <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;">
+            </div>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
 
         <h3 style="color: #ffcc00; letter-spacing: 1px;">THE DEALER</h3>
         <p id="dealerMessages" style="font-size: 16px; font-style: italic; color: #ccc;">Waiting for bets...</p>
         <div id="dealerCards" class="card-container"></div>
-
         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
 
         <h3 id="scoreDisplay" style="letter-spacing: 1px;">Your Score: 0</h3>
         <div id="playerCards" class="card-container"></div>
-
+        
         <div id="actionButtons" style="display: none; margin-top: 15px;">
             <button onclick="hit()" style="background-color: #2ecc71; color: white;">HIT</button>
             <button onclick="stand()" style="background-color: #e74c3c; color: white;">STAND</button>
         </div>
-
         <h2 id="gameStatus" style="font-size: 32px; text-shadow: 2px 2px 4px #000; margin-top: 20px;"></h2>
+    </div>
+
+    <div id="chatWidget" style="background: rgba(0,0,0,0.8); border: 2px solid #55efc4; border-radius: 10px; width: 320px; position: fixed; bottom: 20px; right: 20px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000;">
+        <h4 style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">🔴 VIP Table Chat</h4>
+        <div id="chatHistory" style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;"></div>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="chatInput" placeholder="Talk trash here..." style="width: 75%; padding: 8px; margin: 0; font-size: 14px; background: #222; color: white;">
+            <button onclick="sendChat()" style="width: 25%; padding: 8px; margin: 0; font-size: 14px; background-color: #55efc4; color: black;">Send</button>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let currentTable = "Table-1";
+        let currentTable = "Table-1"; 
 
-        // --- HELPER FUNCTION TO DRAW CARDS ---
         function createCardHTML(cardData) {
-            let symbol = "";
-            let colorClass = "";
-
+            let symbol = "", colorClass = "";
             if (cardData.suit === 'Hearts') { symbol = "♥"; colorClass = "red"; }
             if (cardData.suit === 'Diamonds') { symbol = "♦"; colorClass = "red"; }
             if (cardData.suit === 'Clubs') { symbol = "♣"; colorClass = "black"; }
             if (cardData.suit === 'Spades') { symbol = "♠"; colorClass = "black"; }
-
-            // Creates a visual card element
             return `<div class="card ${colorClass}" data-value="${cardData.value}">
                         <div>${cardData.value}</div>
                         <div style="font-size: 36px;">${symbol}</div>
                     </div>`;
         }
 
-        // --- GAME LOGIC ---
+        // --- GAME ACTIONS ---
         function sitAtTable() {
             const username = document.getElementById('usernameInput').value;
             const betAmount = document.getElementById('betInput').value;
-
-            if (!username || !betAmount) {
-                alert("Please enter a username and bet amount!");
-                return;
-            }
-
-            socket.emit('joinTable', { tableId: currentTable, username: username, betAmount: betAmount });
-
+            if (!username || !betAmount) return alert("Enter a username and bet!");
+            
+            socket.emit('joinTable', { tableId: currentTable, username, betAmount });
+            
             document.getElementById('status').innerText = `Playing as ${username}`;
-            document.getElementById('gameStatus').innerText = "";
-            document.getElementById('dealerMessages').innerText = "Dealer is waiting for you to stand...";
-            document.getElementById('dealerCards').innerHTML = ""; // Clear old cards
+            document.getElementById('gameStatus').innerText = ""; 
+            document.getElementById('dealerMessages').innerText = "Dealer waiting...";
+            document.getElementById('dealerCards').innerHTML = ""; 
             document.getElementById('actionButtons').style.display = "none";
         }
 
         function hit() { socket.emit('hit', currentTable); }
         function stand() { socket.emit('stand', currentTable); }
 
-        socket.on('updateBalance', (newBalance) => {
-            document.getElementById('balanceDisplay').innerText = newBalance;
-        });
+        // --- GAME LISTENERS ---
+        socket.on('updateBalance', (bal) => document.getElementById('balanceDisplay').innerText = bal);
 
-        // Catch Player Cards
         socket.on('dealCards', (data) => {
             let cardsHTML = "";
-            data.hand.forEach(card => {
-                cardsHTML += createCardHTML(card);
-            });
-
+            data.hand.forEach(c => cardsHTML += createCardHTML(c));
             document.getElementById('playerCards').innerHTML = cardsHTML;
             document.getElementById('scoreDisplay').innerText = `Your Score: ${data.score}`;
-            document.getElementById('actionButtons').style.display = "block";
+            document.getElementById('actionButtons').style.display = "block"; 
         });
 
-        // Catch Dealer Cards
         socket.on('dealerPlayed', (data) => {
             let cardsHTML = "";
-            data.hand.forEach(card => {
-                cardsHTML += createCardHTML(card);
-            });
-
+            data.hand.forEach(c => cardsHTML += createCardHTML(c));
             document.getElementById('dealerCards').innerHTML = cardsHTML;
             document.getElementById('dealerMessages').innerText = `Dealer Score: ${data.score}`;
         });
 
-        // Catch Win/Loss Messages
         socket.on('gameStatus', (msg) => {
-            const statusEl = document.getElementById('gameStatus');
-            statusEl.innerText = msg;
-
-            // Add some color to the win/loss messages
-            if (msg.includes("WIN")) statusEl.style.color = "#55efc4"; // Greenish
-            else if (msg.includes("BUST") || msg.includes("lose")) statusEl.style.color = "#ff7675"; // Redish
-            else statusEl.style.color = "#ffeaa7"; // Yellow for Push
-
+            const s = document.getElementById('gameStatus');
+            s.innerText = msg;
+            s.style.color = msg.includes("WIN") ? "#55efc4" : (msg.includes("BUST") || msg.includes("lose")) ? "#ff7675" : "#ffeaa7";
             document.getElementById('actionButtons').style.display = "none";
+        });
 
-            // Listen for the Admin giving us free chips!
-            socket.on('godModeUpdate', (data) => {
-                // Check if the chips were meant for us
-                const myUsername = document.getElementById('usernameInput').value;
+        // --- MULTIPLAYER TABLE VIEW ---
+        socket.on('tableStateUpdate', (allPlayers) => {
+            const otherPlayersDiv = document.getElementById('otherPlayers');
+            const myUsername = document.getElementById('usernameInput').value;
+            let otherPlayersHTML = "";
 
-                if (data.username === myUsername) {
-                    // Update our bank display
-                    document.getElementById('balanceDisplay').innerText = data.newBalance;
-
-                    // Flash a fun message on the screen
-                    const statusEl = document.getElementById('gameStatus');
-                    statusEl.style.color = "#00d2d3";
-                    statusEl.innerText = `⚡ GOD MODE: Bank injected $${data.added} into your account!`;
+            allPlayers.forEach(player => {
+                if (player.username !== myUsername) {
+                    let miniCardsHTML = "";
+                    player.hand.forEach(c => {
+                        miniCardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`;
+                    });
+                    otherPlayersHTML += `
+                        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid #55efc4;">
+                            <h4 style="color: #f1c40f; margin: 0 0 10px 0;">👤 ${player.username}</h4>
+                            <div style="display: flex; justify-content: center;">${miniCardsHTML}</div>
+                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #ccc;">Score: ${player.score}</p>
+                        </div>`;
                 }
             });
+            otherPlayersDiv.innerHTML = otherPlayersHTML;
         });
 
-        // --- CHAT FUNCTIONS ---
-
-        // 1. Send our message to the server
+        // --- CHAT & ADMIN LISTENERS ---
         function sendChat() {
-            const msgInput = document.getElementById('chatInput');
-            const message = msgInput.value;
-            const username = document.getElementById('usernameInput').value || "Anonymous";
-
-            if (message.trim() !== "") {
-                socket.emit('sendChat', { tableId: currentTable, username: username, message: message });
-                msgInput.value = ""; // Clear the input box after sending
+            const input = document.getElementById('chatInput');
+            const username = document.getElementById('usernameInput').value || "Anon";
+            if (input.value.trim() !== "") {
+                socket.emit('sendChat', { tableId: currentTable, username, message: input.value });
+                input.value = "";
             }
         }
+        document.getElementById("chatInput").addEventListener("keypress", e => { if(e.key === "Enter") sendChat(); });
 
-        // Allow pressing "Enter" on the keyboard to send messages
-        document.getElementById("chatInput").addEventListener("keypress", function (event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                sendChat();
-            }
+        socket.on('receiveChat', (data) => {
+            const hist = document.getElementById('chatHistory');
+            hist.innerHTML += `<div><strong style="color: #f1c40f;">${data.username}:</strong> ${data.message}</div>`;
+            hist.scrollTop = hist.scrollHeight;
         });
 
-        // 2. Catch incoming messages and display them
-        socket.on('receiveChat', (data) => {
-            const chatHistory = document.getElementById('chatHistory');
-
-            // Create a new message line
-            const newMessage = document.createElement('div');
-            newMessage.innerHTML = `<strong style="color: #f1c40f;">${data.username}:</strong> ${data.message}`;
-
-            // Add it to the box and auto-scroll to the bottom
-            chatHistory.appendChild(newMessage);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
+        socket.on('godModeUpdate', (data) => {
+            if (data.username === document.getElementById('usernameInput').value) {
+                document.getElementById('balanceDisplay').innerText = data.newBalance;
+                const s = document.getElementById('gameStatus');
+                s.style.color = "#00d2d3";
+                s.innerText = `⚡ GOD MODE: Bank injected $${data.added}!`;
+            }
         });
     </script>
 </body>
-
 </html>
