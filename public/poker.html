@@ -13,13 +13,12 @@
         
         .card-container { display: flex; justify-content: center; gap: 10px; margin: 15px 0; min-height: 120px; }
         .card { width: 80px; height: 115px; background-color: white; border-radius: 8px; border: 1px solid #ccc; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; position: relative; background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%); }
-        .card-back { background: repeating-linear-gradient(45deg, #b01030, #b01030 10px, #fff 10px, #fff 20px); color: transparent; }
+        .card-back { background: repeating-linear-gradient(45deg, #b01030, #b01030 10px, #fff 10px, #fff 20px); }
         .red { color: #d63031; } .black { color: #2d3436; }
         .card::before { content: attr(data-value); position: absolute; top: 5px; left: 8px; font-size: 16px; }
 
-        .pot-display { font-size: 32px; color: #f1c40f; background: rgba(0,0,0,0.6); padding: 10px 30px; border-radius: 30px; border: 2px solid #f1c40f; display: inline-block; margin-top: 20px; }
+        .stage-badge { font-size: 18px; color: #3498db; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0; }
 
-        /* Social / Standard UI */
         .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #3498db; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; position: fixed; bottom: 20px; right: 20px; width: 320px; }
         .reaction-bar { display: none; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
         .reaction-btn { background: transparent; border: none; font-size: 24px; padding: 5px; margin: 0 5px; cursor: pointer; transition: 0.2s; }
@@ -58,28 +57,29 @@
             <button class="reaction-btn" onclick="fireReaction('🎯')">🎯</button>
         </div>
 
-        <div id="pokerBoard" style="display: none; margin-top: 30px;">
-            <div class="pot-display">Main Pot: ₹<span id="mainPot">0</span></div>
+        <div id="pokerBoard" style="display: none; margin-top: 20px;">
+            <p class="stage-badge" id="stageDisplay">Stage: WAITING</p>
+            
+            <button onclick="devAdvanceStage()" style="background-color: #ffcc00; margin-top: 10px;">🛠️ Dev Mode: Advance Round Stage</button>
+            
             <h3 style="color: #ccc; margin-top: 20px;">Community Cards</h3>
-            <div id="communityCards" class="card-container">
-                </div>
+            <div id="communityCards" class="card-container"></div>
             
             <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
             
             <h3 style="color: #ccc;">Your Hole Cards</h3>
             <div id="myCards" class="card-container"></div>
             
-            <div id="pokerActions" style="margin-top: 20px;">
-                <button style="background: #95a5a6; color: white;">Fold</button>
-                <button style="background: #3498db; color: white;">Check / Call</button>
-                <button style="background: #e74c3c; color: white;">Raise</button>
+            <div id="pokerActions" style="margin-top: 20px; opacity: 0.5;">
+                <button style="background: #95a5a6; color: white;" disabled>Fold (Phase 3)</button>
+                <button style="background: #3498db; color: white;" disabled>Check (Phase 3)</button>
+                <button style="background: #e74c3c; color: white;" disabled>Raise (Phase 3)</button>
             </div>
         </div>
 
         <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
         <h3 style="color: #ccc;">Other Players at Table</h3>
-        <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;">
-            </div>
+        <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;"></div>
     </div>
 
     <div id="chatWidget" class="chat-widget">
@@ -96,41 +96,102 @@
         const socket = io();
         let currentTable = ""; 
 
+        function createCardHTML(cardData, isHidden = false) {
+            if (isHidden) return `<div class="card card-back"></div>`;
+            let symbol = "", colorClass = "";
+            if (cardData.suit === 'Hearts') { symbol = "♥"; colorClass = "red"; }
+            if (cardData.suit === 'Diamonds') { symbol = "♦"; colorClass = "red"; }
+            if (cardData.suit === 'Clubs') { symbol = "♣"; colorClass = "black"; }
+            if (cardData.suit === 'Spades') { symbol = "♠"; colorClass = "black"; }
+            return `<div class="card ${colorClass}" data-value="${cardData.value}"><div>${cardData.value}</div><div style="font-size: 36px;">${symbol}</div></div>`;
+        }
+
         function joinPoker() {
             const username = document.getElementById('usernameInput').value;
             const rawRoom = document.getElementById('roomInput').value;
             if (!username) return alert("Enter a username!");
-            
             currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "Texas-1";
-            
-            // This event doesn't exist on the server yet! (Phase 2)
             socket.emit('joinPoker', { tableId: currentTable, username });
             
-            document.getElementById('status').innerText = `Sitting at ${currentTable} as ${username}`;
+            document.getElementById('status').innerText = `Sitting at ${currentTable}`;
             document.getElementById('chatRoomName').innerText = currentTable;
             document.getElementById('pokerBoard').style.display = "block";
             document.getElementById('reactionBar').style.display = "inline-block";
         }
 
-        // --- Social Logic (Reused from Blackjack/Roulette) ---
-        socket.on('updateBalance', (bal) => document.getElementById('balanceDisplay').innerText = bal);
-
-        function fireReaction(emoji) {
-            const myUsername = document.getElementById('usernameInput').value;
-            if(myUsername && currentTable) socket.emit('sendReaction', { tableId: currentTable, username: myUsername, emoji: emoji });
+        // Trigger Phase 2 State Machine
+        function devAdvanceStage() {
+            socket.emit('devAdvancePokerStage', currentTable);
         }
 
+        // Receive your specific private cards
+        socket.on('receiveHoleCards', (cards) => {
+            let html = "";
+            cards.forEach(c => html += createCardHTML(c));
+            document.getElementById('myCards').innerHTML = html;
+        });
+
+        // The Master Board State Update
+        socket.on('pokerStateUpdate', (data) => {
+            const myUsername = document.getElementById('usernameInput').value;
+            
+            document.getElementById('stageDisplay').innerText = `Stage: ${data.stage}`;
+            
+            // Render Community Cards
+            let communityHTML = "";
+            data.communityCards.forEach(c => communityHTML += createCardHTML(c));
+            document.getElementById('communityCards').innerHTML = communityHTML;
+
+            // Render Other Players
+            let otherPlayersHTML = "";
+            data.players.forEach(p => {
+                if (p.username !== myUsername) {
+                    let cardsHTML = "";
+                    if (p.status === 'playing') {
+                        // Secret cards while playing
+                        cardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(null, true)}</div>`;
+                        cardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(null, true)}</div>`;
+                    } else if (p.cards.length > 0) {
+                        // Revealed cards at Showdown
+                        p.cards.forEach(c => cardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`);
+                    }
+
+                    let highlight = p.status === 'winner' ? 'border: 2px solid #f1c40f; box-shadow: 0 0 15px #f1c40f;' : 'border: 1px solid #3498db;';
+                    let handText = p.handDesc ? `<p style="color:#f1c40f; font-size:12px; margin:5px 0 0 0;">${p.handDesc}</p>` : "";
+
+                    otherPlayersHTML += `
+                        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; ${highlight}">
+                            <h4 style="color: #3498db; margin: 0 0 10px 0;">👤 ${p.username}</h4>
+                            <div style="display: flex; justify-content: center;">${cardsHTML}</div>
+                            ${handText}
+                            <button class="tip-btn" onclick="sendTip('${p.username}')">Tip ₹100</button>
+                        </div>`;
+                }
+            });
+            document.getElementById('otherPlayers').innerHTML = otherPlayersHTML;
+        });
+
+        socket.on('updateBalance', (bal) => document.getElementById('balanceDisplay').innerText = bal);
+
+        // --- Social Logic ---
+        function sendTip(receiver) {
+            const sender = document.getElementById('usernameInput').value;
+            if(confirm(`Tip ₹100 to ${receiver}?`)) socket.emit('tipPlayer', { tableId: currentTable, sender, receiver, amount: 100 });
+        }
+        function fireReaction(emoji) {
+            const username = document.getElementById('usernameInput').value;
+            if(username && currentTable) socket.emit('sendReaction', { tableId: currentTable, username, emoji });
+        }
         socket.on('triggerReaction', (data) => {
             const table = document.getElementById('gameTable');
             const emojiEl = document.createElement('div');
-            emojiEl.className = 'floating-emoji';
-            emojiEl.innerText = data.emoji;
-            emojiEl.style.left = `${Math.floor(Math.random() * 80) + 10}%`;
-            emojiEl.style.bottom = '100px';
+            emojiEl.className = 'floating-emoji'; emojiEl.innerText = data.emoji;
+            emojiEl.style.left = `${Math.floor(Math.random() * 80) + 10}%`; emojiEl.style.bottom = '100px';
             table.appendChild(emojiEl);
             setTimeout(() => { emojiEl.remove(); }, 2500);
         });
 
+        // --- Chat Logic ---
         function sendChat() {
             const input = document.getElementById('chatInput');
             const username = document.getElementById('usernameInput').value || "Anon";
@@ -140,10 +201,9 @@
             }
         }
         document.getElementById("chatInput").addEventListener("keypress", e => { if(e.key === "Enter") sendChat(); });
-
         socket.on('receiveChat', (data) => {
             const hist = document.getElementById('chatHistory');
-            let color = data.username === "SYSTEM" ? "#ff7675" : "#f1c40f";
+            let color = data.username === "SYSTEM" ? "#ffcc00" : "#3498db";
             hist.innerHTML += `<div><strong style="color: ${color};">${data.username}:</strong> ${data.message}</div>`;
             hist.scrollTop = hist.scrollHeight;
         });
