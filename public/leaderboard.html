@@ -1,29 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casino Hall of Fame</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; text-align: center; padding: 40px; margin: 0; }
-        h1 { color: #f1c40f; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
-        p { color: #ccc; margin-bottom: 30px; font-style: italic; }
-        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111;
+            color: white;
+            text-align: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #f1c40f;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #ccc;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
         /* The Leaderboard Board */
-        .board { background: #222; border: 2px solid #f1c40f; border-radius: 15px; width: 90%; max-width: 600px; margin: auto; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #333; font-size: 20px; font-weight: bold; }
-        .row:last-child { border-bottom: none; }
-        
+        .board {
+            background: #222;
+            border: 2px solid #f1c40f;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
         /* Top 3 Styling */
-        .rank-1 { color: #ffd700; font-size: 24px; text-shadow: 0 0 10px rgba(255,215,0,0.5); } /* Gold */
-        .rank-2 { color: #c0c0c0; font-size: 22px; } /* Silver */
-        .rank-3 { color: #cd7f32; font-size: 22px; } /* Bronze */
-        
-        .back-btn { display: inline-block; margin-top: 30px; padding: 10px 20px; background-color: #55efc4; color: #111; text-decoration: none; font-weight: bold; border-radius: 5px; transition: 0.2s; }
-        .back-btn:hover { background-color: #00b894; transform: scale(1.05); }
+        .rank-1 {
+            color: #ffd700;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Gold */
+        .rank-2 {
+            color: #c0c0c0;
+            font-size: 22px;
+        }
+
+        /* Silver */
+        .rank-3 {
+            color: #cd7f32;
+            font-size: 22px;
+        }
+
+        /* Bronze */
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background-color: #55efc4;
+            color: #111;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background-color: #00b894;
+            transform: scale(1.05);
+        }
     </style>
 </head>
+
 <body>
 
     <h1>🏆 The High Rollers</h1>
@@ -41,10 +111,10 @@
             try {
                 const response = await fetch('/api/leaderboard');
                 const players = await response.json();
-                
+
                 const board = document.getElementById('leaderboardData');
                 board.innerHTML = ""; // Clear the loading text
-                
+
                 if (players.length === 0) {
                     board.innerHTML = "<div style='padding: 20px;'>No players found yet. Go place some bets!</div>";
                     return;
@@ -54,7 +124,7 @@
                 players.forEach((player, index) => {
                     let rankDisplay = `#${index + 1}`;
                     let rowClass = "row";
-                    
+
                     // Assign trophies and special colors to the Top 3
                     if (index === 0) { rankDisplay = "🥇"; rowClass += " rank-1"; }
                     if (index === 1) { rankDisplay = "🥈"; rowClass += " rank-2"; }
@@ -81,4 +151,5 @@
         loadLeaderboard();
     </script>
 </body>
+
 </html>

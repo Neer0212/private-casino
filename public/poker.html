@@ -1,55 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIP Texas Hold'em</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #111; color: white; text-align: center; padding: 20px; margin: 0; overflow-x: hidden; }
-        .table { background: radial-gradient(ellipse, #1e3c72 0%, #2a5298 100%); padding: 30px; border-radius: 200px; width: 85%; max-width: 1000px; margin: auto; border: 15px solid #111; box-shadow: inset 0 0 50px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.8); position: relative; min-height: 500px; }
-        button { padding: 10px 25px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 5px; border-radius: 5px; border: none; background-color: #f1c40f; color: #111; transition: 0.2s; }
-        button:hover { background-color: #f39c12; transform: scale(1.05); }
-        input { padding: 10px; font-size: 16px; margin: 5px; border-radius: 5px; border: none; }
-        
-        .card-container { display: flex; justify-content: center; gap: 10px; margin: 15px 0; min-height: 120px; }
-        .card { width: 80px; height: 115px; background-color: white; border-radius: 8px; border: 1px solid #ccc; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; position: relative; background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%); }
-        .card-back { background: repeating-linear-gradient(45deg, #b01030, #b01030 10px, #fff 10px, #fff 20px); }
-        .red { color: #d63031; } .black { color: #2d3436; }
-        .card::before { content: attr(data-value); position: absolute; top: 5px; left: 8px; font-size: 16px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #111;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            overflow-x: hidden;
+        }
 
-        .stage-badge { font-size: 18px; color: #3498db; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0; }
+        .table {
+            background: radial-gradient(ellipse, #1e3c72 0%, #2a5298 100%);
+            padding: 30px;
+            border-radius: 200px;
+            width: 85%;
+            max-width: 1000px;
+            margin: auto;
+            border: 15px solid #111;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7), 0 10px 30px rgba(0, 0, 0, 0.8);
+            position: relative;
+            min-height: 500px;
+        }
 
-        .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #3498db; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; position: fixed; bottom: 20px; right: 20px; width: 320px; }
-        .reaction-bar { display: none; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
-        .reaction-btn { background: transparent; border: none; font-size: 24px; padding: 5px; margin: 0 5px; cursor: pointer; transition: 0.2s; }
-        .reaction-btn:hover { transform: scale(1.3) translateY(-5px); }
-        .tip-btn { background-color: #3498db; color: white; padding: 5px 10px; font-size: 12px; margin-top: 10px; border-radius: 3px; border: none; cursor: pointer; }
-        .floating-emoji { position: absolute; font-size: 40px; pointer-events: none; z-index: 999; animation: floatUp 2.5s ease-out forwards; }
-        
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { transform: translateY(-50px) scale(1.2); opacity: 1; } 100% { transform: translateY(-200px) scale(1); opacity: 0; } }
-        
-        @media (max-width: 768px) { .chat-widget { position: relative; bottom: auto; right: auto; width: 90%; margin: 20px auto; } .table { border-radius: 50px; width: 95%; } }
+        button {
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+            background-color: #f1c40f;
+            color: #111;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #f39c12;
+            transform: scale(1.05);
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .card-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            min-height: 120px;
+        }
+
+        .card {
+            width: 80px;
+            height: 115px;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            position: relative;
+            background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);
+        }
+
+        .card-back {
+            background: repeating-linear-gradient(45deg, #b01030, #b01030 10px, #fff 10px, #fff 20px);
+        }
+
+        .red {
+            color: #d63031;
+        }
+
+        .black {
+            color: #2d3436;
+        }
+
+        .card::before {
+            content: attr(data-value);
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            font-size: 16px;
+        }
+
+        .stage-badge {
+            font-size: 18px;
+            color: #3498db;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0;
+        }
+
+        .chat-widget {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+        }
+
+        .reaction-bar {
+            display: none;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .reaction-btn {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            padding: 5px;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .reaction-btn:hover {
+            transform: scale(1.3) translateY(-5px);
+        }
+
+        .tip-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-top: 10px;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 999;
+            animation: floatUp 2.5s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(0.5);
+                opacity: 0;
+            }
+
+            20% {
+                transform: translateY(-50px) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-200px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chat-widget {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                width: 90%;
+                margin: 20px auto;
+            }
+
+            .table {
+                border-radius: 50px;
+                width: 95%;
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <h1 style="color: #3498db; letter-spacing: 2px;">Texas Hold'em Poker</h1>
-    
+
     <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <a href="/" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px;">♠️ Blackjack</a>
-        <a href="/roulette.html" style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🎡 Roulette</a>
+        <a href="/"
+            style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px;">♠️
+            Blackjack</a>
+        <a href="/roulette.html"
+            style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🎡
+            Roulette</a>
     </div>
-    
+
     <div class="table" id="gameTable">
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 20px; display: inline-block;">
             <input type="text" id="usernameInput" placeholder="Enter Username">
             <input type="text" id="roomInput" placeholder="Room (e.g. HighRoller)" style="width: 160px;">
             <button onclick="joinPoker()">Take a Seat</button>
-            <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Standing at the edge of the room...</h2>
+            <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Standing at the
+                edge of the room...</h2>
         </div>
 
         <h2 style="color: #3498db; font-size: 28px; margin: 15px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
-        
+
         <div class="reaction-bar" id="reactionBar">
             <button class="reaction-btn" onclick="fireReaction('🔥')">🔥</button>
             <button class="reaction-btn" onclick="fireReaction('💸')">💸</button>
@@ -59,17 +231,18 @@
 
         <div id="pokerBoard" style="display: none; margin-top: 20px;">
             <p class="stage-badge" id="stageDisplay">Stage: WAITING</p>
-            
-            <button onclick="devAdvanceStage()" style="background-color: #ffcc00; margin-top: 10px;">🛠️ Dev Mode: Advance Round Stage</button>
-            
+
+            <button onclick="devAdvanceStage()" style="background-color: #ffcc00; margin-top: 10px;">🛠️ Dev Mode:
+                Advance Round Stage</button>
+
             <h3 style="color: #ccc; margin-top: 20px;">Community Cards</h3>
             <div id="communityCards" class="card-container"></div>
-            
+
             <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
-            
+
             <h3 style="color: #ccc;">Your Hole Cards</h3>
             <div id="myCards" class="card-container"></div>
-            
+
             <div id="pokerActions" style="margin-top: 20px; opacity: 0.5;">
                 <button style="background: #95a5a6; color: white;" disabled>Fold (Phase 3)</button>
                 <button style="background: #3498db; color: white;" disabled>Check (Phase 3)</button>
@@ -79,22 +252,30 @@
 
         <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
         <h3 style="color: #ccc;">Other Players at Table</h3>
-        <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;"></div>
+        <div id="otherPlayers"
+            style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;">
+        </div>
     </div>
 
     <div id="chatWidget" class="chat-widget">
-        <h4 style="color: #3498db; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #3498db; padding-bottom: 5px;">🔵 <span id="chatRoomName">Poker</span> Chat</h4>
-        <div id="chatHistory" style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;"></div>
+        <h4
+            style="color: #3498db; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #3498db; padding-bottom: 5px;">
+            🔵 <span id="chatRoomName">Poker</span> Chat</h4>
+        <div id="chatHistory"
+            style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;">
+        </div>
         <div style="display: flex; gap: 5px;">
-            <input type="text" id="chatInput" placeholder="Read 'em and weep..." style="width: 75%; padding: 8px; margin: 0; font-size: 14px; background: #222; color: white;">
-            <button onclick="sendChat()" style="width: 25%; padding: 8px; margin: 0; font-size: 14px; background-color: #3498db; color: white;">Send</button>
+            <input type="text" id="chatInput" placeholder="Read 'em and weep..."
+                style="width: 75%; padding: 8px; margin: 0; font-size: 14px; background: #222; color: white;">
+            <button onclick="sendChat()"
+                style="width: 25%; padding: 8px; margin: 0; font-size: 14px; background-color: #3498db; color: white;">Send</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let currentTable = ""; 
+        let currentTable = "";
 
         function createCardHTML(cardData, isHidden = false) {
             if (isHidden) return `<div class="card card-back"></div>`;
@@ -112,7 +293,7 @@
             if (!username) return alert("Enter a username!");
             currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "Texas-1";
             socket.emit('joinPoker', { tableId: currentTable, username });
-            
+
             document.getElementById('status').innerText = `Sitting at ${currentTable}`;
             document.getElementById('chatRoomName').innerText = currentTable;
             document.getElementById('pokerBoard').style.display = "block";
@@ -134,9 +315,9 @@
         // The Master Board State Update
         socket.on('pokerStateUpdate', (data) => {
             const myUsername = document.getElementById('usernameInput').value;
-            
+
             document.getElementById('stageDisplay').innerText = `Stage: ${data.stage}`;
-            
+
             // Render Community Cards
             let communityHTML = "";
             data.communityCards.forEach(c => communityHTML += createCardHTML(c));
@@ -176,11 +357,11 @@
         // --- Social Logic ---
         function sendTip(receiver) {
             const sender = document.getElementById('usernameInput').value;
-            if(confirm(`Tip ₹100 to ${receiver}?`)) socket.emit('tipPlayer', { tableId: currentTable, sender, receiver, amount: 100 });
+            if (confirm(`Tip ₹100 to ${receiver}?`)) socket.emit('tipPlayer', { tableId: currentTable, sender, receiver, amount: 100 });
         }
         function fireReaction(emoji) {
             const username = document.getElementById('usernameInput').value;
-            if(username && currentTable) socket.emit('sendReaction', { tableId: currentTable, username, emoji });
+            if (username && currentTable) socket.emit('sendReaction', { tableId: currentTable, username, emoji });
         }
         socket.on('triggerReaction', (data) => {
             const table = document.getElementById('gameTable');
@@ -200,7 +381,7 @@
                 input.value = "";
             }
         }
-        document.getElementById("chatInput").addEventListener("keypress", e => { if(e.key === "Enter") sendChat(); });
+        document.getElementById("chatInput").addEventListener("keypress", e => { if (e.key === "Enter") sendChat(); });
         socket.on('receiveChat', (data) => {
             const hist = document.getElementById('chatHistory');
             let color = data.username === "SYSTEM" ? "#ffcc00" : "#3498db";
@@ -209,4 +390,5 @@
         });
     </script>
 </body>
+
 </html>

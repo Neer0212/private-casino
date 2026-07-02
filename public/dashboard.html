@@ -1,46 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casino Floor Manager</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Consolas', 'Courier New', monospace; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 30px; }
-        h1 { color: #58a6ff; text-align: center; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #30363d; padding-bottom: 15px; margin-bottom: 30px; }
-        
-        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: auto; }
-        
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .card h3 { color: #8b949e; margin-top: 0; font-size: 14px; text-transform: uppercase; }
-        
-        .stat-huge { font-size: 48px; color: #3fb950; font-weight: bold; margin: 10px 0; }
-        
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #58a6ff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #30363d;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h3 {
+            color: #8b949e;
+            margin-top: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .stat-huge {
+            font-size: 48px;
+            color: #3fb950;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
         /* Live Feed Terminal */
-        .terminal { height: 300px; overflow-y: auto; background: #010409; border: 1px solid #30363d; padding: 15px; border-radius: 5px; font-size: 13px; line-height: 1.6; }
-        .terminal-row { border-bottom: 1px solid #21262d; padding: 5px 0; display: flex; gap: 10px; }
-        .time-stamp { color: #8b949e; min-width: 90px; }
-        .event-text { color: #e6edf3; }
+        .terminal {
+            height: 300px;
+            overflow-y: auto;
+            background: #010409;
+            border: 1px solid #30363d;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
 
-        .back-btn { display: block; width: max-content; margin: 30px auto; padding: 10px 20px; background: transparent; border: 1px solid #58a6ff; color: #58a6ff; text-decoration: none; border-radius: 5px; font-weight: bold; }
-        .back-btn:hover { background: #58a6ff; color: #0d1117; }
+        .terminal-row {
+            border-bottom: 1px solid #21262d;
+            padding: 5px 0;
+            display: flex;
+            gap: 10px;
+        }
 
-        @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
+        .time-stamp {
+            color: #8b949e;
+            min-width: 90px;
+        }
+
+        .event-text {
+            color: #e6edf3;
+        }
+
+        .back-btn {
+            display: block;
+            width: max-content;
+            margin: 30px auto;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid #58a6ff;
+            color: #58a6ff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .back-btn:hover {
+            background: #58a6ff;
+            color: #0d1117;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <h1>👁️ The Eye in the Sky</h1>
 
     <div class="grid-container">
-        
+
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card" style="text-align: center;">
                 <h3>Total Casino Vault Wealth</h3>
                 <div id="vaultTotal" class="stat-huge">₹0</div>
                 <p style="color: #8b949e; margin: 0;">Sum of all player balances in PostgreSQL</p>
             </div>
-            
+
             <div class="card">
                 <h3>Active Floor Traffic</h3>
                 <canvas id="trafficChart" height="200"></canvas>
@@ -50,7 +131,8 @@
         <div class="card">
             <h3>🔴 Live Global Floor Feed</h3>
             <div id="liveFeed" class="terminal">
-                <div class="terminal-row" style="color: #3fb950;">[SYSTEM] Surveillance initialized. Awaiting floor action...</div>
+                <div class="terminal-row" style="color: #3fb950;">[SYSTEM] Surveillance initialized. Awaiting floor
+                    action...</div>
             </div>
         </div>
 
@@ -86,10 +168,10 @@
             try {
                 const res = await fetch('/api/admin/stats');
                 const data = await res.json();
-                
+
                 // Update Vault Money
                 document.getElementById('vaultTotal').innerText = `₹${parseInt(data.totalWealth).toLocaleString()}`;
-                
+
                 // Update Chart
                 trafficChart.data.datasets[0].data = [data.blackjackPlayers, data.roulettePlayers];
                 trafficChart.update();
@@ -105,15 +187,15 @@
         // 3. Listen for Live Feed Activity
         socket.on('adminActivity', (data) => {
             const feed = document.getElementById('liveFeed');
-            
+
             // Create a new row
             const newRow = document.createElement('div');
             newRow.className = 'terminal-row';
             newRow.innerHTML = `<span class="time-stamp">[${data.time}]</span> <span class="event-text">${data.message}</span>`;
-            
+
             // Prepend it to the top of the terminal
             feed.prepend(newRow);
-            
+
             // Keep the terminal from getting too huge (max 50 messages)
             if (feed.children.length > 50) {
                 feed.removeChild(feed.lastChild);
@@ -121,4 +203,5 @@
         });
     </script>
 </body>
+
 </html>

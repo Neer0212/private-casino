@@ -1,25 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>God Mode - Admin Panel</title>
     <style>
-        body { font-family: 'Courier New', Courier, monospace; background-color: #000; color: #00ff00; padding: 40px; }
-        h1 { border-bottom: 2px solid #00ff00; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 18px; }
-        th, td { border: 1px solid #00ff00; padding: 10px; text-align: left; }
-        th { background-color: #003300; }
-        .control-panel { background-color: #111; padding: 20px; border: 1px solid #00ff00; margin-top: 30px; }
-        input, button { padding: 10px; font-size: 16px; margin: 5px; background: #000; border: 1px solid #00ff00; color: #00ff00; }
-        button { cursor: pointer; font-weight: bold; }
-        button:hover { background: #00ff00; color: #000; }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            color: #00ff00;
+            padding: 40px;
+        }
+
+        h1 {
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        th,
+        td {
+            border: 1px solid #00ff00;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #003300;
+        }
+
+        .control-panel {
+            background-color: #111;
+            padding: 20px;
+            border: 1px solid #00ff00;
+            margin-top: 30px;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #00ff00;
+            color: #000;
+        }
     </style>
 </head>
+
 <body>
 
     <h1>🔒 CASINO MAINFRAME // ADMIN</h1>
-    
+
     <div class="control-panel">
         <h3>⚡ CHIP INJECTOR</h3>
         <input type="text" id="targetUser" placeholder="Target Username">
@@ -33,7 +82,7 @@
             <th>Username</th>
             <th>Current Balance</th>
         </tr>
-        </table>
+    </table>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -67,4 +116,5 @@
         }
     </script>
 </body>
+
 </html>
