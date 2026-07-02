@@ -18,6 +18,15 @@
 
         .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #55efc4; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; position: fixed; bottom: 20px; right: 20px; width: 320px; }
         
+        /* --- INSTRUCTIONS MODAL CSS --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 999; justify-content: center; align-items: center; }
+        .modal-content { background: #222; border: 2px solid #f1c40f; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%; text-align: left; box-shadow: 0 10px 40px rgba(0,0,0,0.9); position: relative; }
+        .modal-content h2 { color: #f1c40f; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .modal-content h4 { color: #55efc4; margin-bottom: 5px; }
+        .modal-content p, .modal-content li { color: #ccc; font-size: 15px; line-height: 1.5; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; font-weight: bold; }
+        .close-btn:hover { color: #ff7675; }
+
         /* --- SOCIAL FEATURES CSS --- */
         .reaction-bar { display: none; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
         .reaction-btn { background: transparent; border: none; font-size: 24px; padding: 5px; margin: 0 5px; cursor: pointer; transition: 0.2s; }
@@ -26,7 +35,6 @@
         .tip-btn { background-color: #3498db; color: white; padding: 5px 10px; font-size: 12px; margin-top: 10px; border-radius: 3px; }
         .tip-btn:hover { background-color: #2980b9; }
 
-        /* Floating Emoji Animation */
         .floating-emoji { position: absolute; font-size: 40px; pointer-events: none; z-index: 999; animation: floatUp 2.5s ease-out forwards; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         @keyframes floatUp {
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
@@ -44,9 +52,11 @@
 
     <h1 style="color: #f1c40f; letter-spacing: 2px;">♠️ VIP BLACKJACK ♣️</h1>
     
+    <!-- RESTORED TOP NAVIGATION -->
     <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <a href="/roulette.html" style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🎡 Play Roulette</a>
-        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🏆 Global Leaderboard</a>
+        <button onclick="openInstructions()" style="background-color: transparent; border: 1px solid #3498db; color: #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px;">📖 How to Play</button>
+        <a href="/roulette.html" style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">🎡 Play Roulette</a>
+        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">🏆 Global Leaderboard</a>
     </div>
     
     <div class="table" id="gameTable">
@@ -60,6 +70,7 @@
 
         <h2 style="color: #55efc4; font-size: 28px; margin: 10px 0 5px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
         
+        <!-- EMOJI REACTION BAR -->
         <div class="reaction-bar" id="reactionBar" style="display: none;">
             <button class="reaction-btn" onclick="fireReaction('🔥')">🔥</button>
             <button class="reaction-btn" onclick="fireReaction('💸')">💸</button>
@@ -87,6 +98,7 @@
         <h2 id="gameStatus" style="font-size: 32px; text-shadow: 2px 2px 4px #000; margin-top: 20px;"></h2>
     </div>
 
+    <!-- 💬 LIVE CHAT -->
     <div id="chatWidget" class="chat-widget">
         <h4 style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">🔴 <span id="chatRoomName">VIP Table</span> Chat</h4>
         <div id="chatHistory" style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;"></div>
@@ -96,10 +108,35 @@
         </div>
     </div>
 
+    <!-- 📖 RESTORED INSTRUCTIONS MODAL -->
+    <div id="instructionsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeInstructions()">×</span>
+            <h2>Welcome to VIP Blackjack</h2>
+            <h4>🤝 How to Connect</h4>
+            <ul>
+                <li><strong>Username:</strong> Pick a unique name. Your bank balance will save permanently!</li>
+                <li><strong>Table Name:</strong> Type a secret room name to play privately. Leave it blank for the Public table.</li>
+            </ul>
+            <h4>🃏 How to Play</h4>
+            <ul>
+                <li>The goal is to get your score closer to <strong>21</strong> than the Dealer, without going over.</li>
+                <li><strong>HIT:</strong> Ask the dealer for another card.</li>
+                <li><strong>STAND:</strong> Lock in your score and end your turn.</li>
+                <li>If you go over 21, you <strong>BUST</strong> and lose your bet immediately.</li>
+            </ul>
+            <button onclick="closeInstructions()" style="width: 100%; margin-top: 15px; background: #55efc4;">Got it, let's play!</button>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         let currentTable = ""; 
+
+        // Restored Modal Functions
+        function openInstructions() { document.getElementById('instructionsModal').style.display = 'flex'; }
+        function closeInstructions() { document.getElementById('instructionsModal').style.display = 'none'; }
 
         function createCardHTML(cardData) {
             let symbol = "", colorClass = "";
@@ -159,7 +196,6 @@
             document.getElementById('actionButtons').style.display = "none";
         });
 
-        // --- UPDATED TABLE STATE (NOW INCLUDES TIPPING) ---
         socket.on('tableStateUpdate', (allPlayers) => {
             const otherPlayersDiv = document.getElementById('otherPlayers');
             const myUsername = document.getElementById('usernameInput').value;
@@ -172,7 +208,6 @@
                         miniCardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`;
                     });
                     
-                    // Added a Tip Button bound to the specific player
                     otherPlayersHTML += `
                         <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid #55efc4;">
                             <h4 style="color: #f1c40f; margin: 0 0 10px 0;">👤 ${player.username}</h4>
@@ -185,7 +220,6 @@
             otherPlayersDiv.innerHTML = otherPlayersHTML;
         });
 
-        // --- SOCIAL JAVASCRIPT LOGIC ---
         function sendTip(receiverUsername) {
             const myUsername = document.getElementById('usernameInput').value;
             if(confirm(`Send ₹100 tip to ${receiverUsername}?`)) {
@@ -198,25 +232,20 @@
             socket.emit('sendReaction', { tableId: currentTable, username: myUsername, emoji: emoji });
         }
 
-        // Animate the emoji when received from the server
         socket.on('triggerReaction', (data) => {
             const table = document.getElementById('gameTable');
             const emojiEl = document.createElement('div');
             emojiEl.className = 'floating-emoji';
             emojiEl.innerText = data.emoji;
             
-            // Randomize starting position slightly across the bottom of the table
             const randomLeft = Math.floor(Math.random() * 80) + 10; 
             emojiEl.style.left = `${randomLeft}%`;
             emojiEl.style.bottom = '100px';
 
             table.appendChild(emojiEl);
-            
-            // Cleanup the DOM element after animation ends
             setTimeout(() => { emojiEl.remove(); }, 2500);
         });
 
-        // --- CHAT LOGIC ---
         function sendChat() {
             const input = document.getElementById('chatInput');
             const username = document.getElementById('usernameInput').value || "Anon";
