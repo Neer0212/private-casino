@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Private VIP Casino</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; text-align: center; padding: 20px; margin: 0; }
-        .table { background: radial-gradient(circle, #2E8B57 0%, #1a5c36 100%); padding: 30px; border-radius: 150px; width: 75%; max-width: 900px; margin: auto; border: 15px solid #4a3018; box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.8); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; text-align: center; padding: 20px; margin: 0; overflow-x: hidden; }
+        .table { background: radial-gradient(circle, #2E8B57 0%, #1a5c36 100%); padding: 30px; border-radius: 150px; width: 75%; max-width: 900px; margin: auto; border: 15px solid #4a3018; box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.8); position: relative; }
         button { padding: 10px 25px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 5px; border-radius: 5px; border: none; background-color: #f1c40f; color: #111; transition: 0.2s; }
         button:hover { background-color: #f39c12; transform: scale(1.05); }
         input { padding: 10px; font-size: 16px; margin: 5px; border-radius: 5px; border: none; }
@@ -18,13 +18,21 @@
 
         .chat-widget { background: rgba(0,0,0,0.9); border: 2px solid #55efc4; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; position: fixed; bottom: 20px; right: 20px; width: 320px; }
         
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 999; justify-content: center; align-items: center; }
-        .modal-content { background: #222; border: 2px solid #f1c40f; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%; text-align: left; box-shadow: 0 10px 40px rgba(0,0,0,0.9); position: relative; }
-        .modal-content h2 { color: #f1c40f; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        .modal-content h4 { color: #55efc4; margin-bottom: 5px; }
-        .modal-content p, .modal-content li { color: #ccc; font-size: 15px; line-height: 1.5; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; font-weight: bold; }
-        .close-btn:hover { color: #ff7675; }
+        /* --- SOCIAL FEATURES CSS --- */
+        .reaction-bar { display: none; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
+        .reaction-btn { background: transparent; border: none; font-size: 24px; padding: 5px; margin: 0 5px; cursor: pointer; transition: 0.2s; }
+        .reaction-btn:hover { transform: scale(1.3) translateY(-5px); }
+        
+        .tip-btn { background-color: #3498db; color: white; padding: 5px 10px; font-size: 12px; margin-top: 10px; border-radius: 3px; }
+        .tip-btn:hover { background-color: #2980b9; }
+
+        /* Floating Emoji Animation */
+        .floating-emoji { position: absolute; font-size: 40px; pointer-events: none; z-index: 999; animation: floatUp 2.5s ease-out forwards; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { transform: translateY(-50px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-200px) scale(1); opacity: 0; }
+        }
 
         @media (max-width: 768px) {
             .chat-widget { position: relative; bottom: auto; right: auto; width: 90%; margin: 20px auto; box-sizing: border-box;}
@@ -37,22 +45,29 @@
     <h1 style="color: #f1c40f; letter-spacing: 2px;">♠️ VIP BLACKJACK ♣️</h1>
     
     <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <button onclick="openInstructions()" style="background-color: transparent; border: 1px solid #3498db; color: #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px;">📖 How to Play</button>
-        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">🏆 Global Leaderboard</a>
-        <a href="/roulette.html" style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">🎡 Play Roulette</a>
+        <a href="/roulette.html" style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🎡 Play Roulette</a>
+        <a href="/leaderboard.html" style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🏆 Global Leaderboard</a>
     </div>
     
-    <div class="table">
+    <div class="table" id="gameTable">
         <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: inline-block;">
             <input type="text" id="usernameInput" placeholder="Enter Username">
-            <input type="text" id="roomInput" placeholder="Table Name (e.g. VIP-1)" style="width: 180px;">
+            <input type="text" id="roomInput" placeholder="Table Name" style="width: 140px;">
             <input type="number" id="betInput" placeholder="Bet" style="width: 80px;">
             <button onclick="sitAtTable()">Join Table</button>
             <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Not sitting at a table...</h2>
         </div>
 
-        <h2 style="color: #55efc4; font-size: 28px; margin: 15px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+        <h2 style="color: #55efc4; font-size: 28px; margin: 10px 0 5px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
+        
+        <div class="reaction-bar" id="reactionBar" style="display: none;">
+            <button class="reaction-btn" onclick="fireReaction('🔥')">🔥</button>
+            <button class="reaction-btn" onclick="fireReaction('💸')">💸</button>
+            <button class="reaction-btn" onclick="fireReaction('💀')">💀</button>
+            <button class="reaction-btn" onclick="fireReaction('🎯')">🎯</button>
+        </div>
+
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
         
         <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;"></div>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
@@ -81,33 +96,10 @@
         </div>
     </div>
 
-    <div id="instructionsModal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeInstructions()">×</span>
-            <h2>Welcome to VIP Blackjack</h2>
-            <h4>🤝 How to Connect</h4>
-            <ul>
-                <li><strong>Username:</strong> Pick a unique name. Your bank balance will save permanently!</li>
-                <li><strong>Table Name:</strong> Type a secret room name to play privately. Leave it blank for the Public table.</li>
-            </ul>
-            <h4>🃏 How to Play</h4>
-            <ul>
-                <li>The goal is to get your score closer to <strong>21</strong> than the Dealer, without going over.</li>
-                <li><strong>HIT:</strong> Ask the dealer for another card.</li>
-                <li><strong>STAND:</strong> Lock in your score and end your turn.</li>
-                <li>If you go over 21, you <strong>BUST</strong> and lose your bet immediately.</li>
-            </ul>
-            <button onclick="closeInstructions()" style="width: 100%; margin-top: 15px; background: #55efc4;">Got it, let's play!</button>
-        </div>
-    </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         let currentTable = ""; 
-
-        function openInstructions() { document.getElementById('instructionsModal').style.display = 'flex'; }
-        function closeInstructions() { document.getElementById('instructionsModal').style.display = 'none'; }
 
         function createCardHTML(cardData) {
             let symbol = "", colorClass = "";
@@ -127,8 +119,6 @@
             const rawRoom = document.getElementById('roomInput').value;
             
             if (!username || !betAmount) return alert("Enter a username and bet!");
-            
-            // Strictly enforce the fallback regardless of nulls or invisible spaces
             currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "Public-1";
             
             socket.emit('joinTable', { tableId: currentTable, username, betAmount });
@@ -139,7 +129,7 @@
             document.getElementById('dealerMessages').innerText = "Dealer waiting...";
             document.getElementById('dealerCards').innerHTML = ""; 
             document.getElementById('actionButtons').style.display = "none";
-            document.getElementById('chatHistory').innerHTML = ""; 
+            document.getElementById('reactionBar').style.display = "inline-block"; 
         }
 
         function hit() { socket.emit('hit', currentTable); }
@@ -169,6 +159,7 @@
             document.getElementById('actionButtons').style.display = "none";
         });
 
+        // --- UPDATED TABLE STATE (NOW INCLUDES TIPPING) ---
         socket.on('tableStateUpdate', (allPlayers) => {
             const otherPlayersDiv = document.getElementById('otherPlayers');
             const myUsername = document.getElementById('usernameInput').value;
@@ -180,17 +171,52 @@
                     player.hand.forEach(c => {
                         miniCardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`;
                     });
+                    
+                    // Added a Tip Button bound to the specific player
                     otherPlayersHTML += `
                         <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid #55efc4;">
                             <h4 style="color: #f1c40f; margin: 0 0 10px 0;">👤 ${player.username}</h4>
                             <div style="display: flex; justify-content: center;">${miniCardsHTML}</div>
                             <p style="margin: 5px 0 0 0; font-size: 14px; color: #ccc;">Score: ${player.score}</p>
+                            <button class="tip-btn" onclick="sendTip('${player.username}')">Tip ₹100</button>
                         </div>`;
                 }
             });
             otherPlayersDiv.innerHTML = otherPlayersHTML;
         });
 
+        // --- SOCIAL JAVASCRIPT LOGIC ---
+        function sendTip(receiverUsername) {
+            const myUsername = document.getElementById('usernameInput').value;
+            if(confirm(`Send ₹100 tip to ${receiverUsername}?`)) {
+                socket.emit('tipPlayer', { tableId: currentTable, sender: myUsername, receiver: receiverUsername, amount: 100 });
+            }
+        }
+
+        function fireReaction(emoji) {
+            const myUsername = document.getElementById('usernameInput').value;
+            socket.emit('sendReaction', { tableId: currentTable, username: myUsername, emoji: emoji });
+        }
+
+        // Animate the emoji when received from the server
+        socket.on('triggerReaction', (data) => {
+            const table = document.getElementById('gameTable');
+            const emojiEl = document.createElement('div');
+            emojiEl.className = 'floating-emoji';
+            emojiEl.innerText = data.emoji;
+            
+            // Randomize starting position slightly across the bottom of the table
+            const randomLeft = Math.floor(Math.random() * 80) + 10; 
+            emojiEl.style.left = `${randomLeft}%`;
+            emojiEl.style.bottom = '100px';
+
+            table.appendChild(emojiEl);
+            
+            // Cleanup the DOM element after animation ends
+            setTimeout(() => { emojiEl.remove(); }, 2500);
+        });
+
+        // --- CHAT LOGIC ---
         function sendChat() {
             const input = document.getElementById('chatInput');
             const username = document.getElementById('usernameInput').value || "Anon";
@@ -203,17 +229,9 @@
 
         socket.on('receiveChat', (data) => {
             const hist = document.getElementById('chatHistory');
-            hist.innerHTML += `<div><strong style="color: #f1c40f;">${data.username}:</strong> ${data.message}</div>`;
+            let color = data.username === "SYSTEM" ? "#ff7675" : "#f1c40f";
+            hist.innerHTML += `<div><strong style="color: ${color};">${data.username}:</strong> ${data.message}</div>`;
             hist.scrollTop = hist.scrollHeight;
-        });
-
-        socket.on('godModeUpdate', (data) => {
-            if (data.username === document.getElementById('usernameInput').value) {
-                document.getElementById('balanceDisplay').innerText = data.newBalance;
-                const s = document.getElementById('gameStatus');
-                s.style.color = "#00d2d3";
-                s.innerText = `⚡ GOD MODE: Bank injected ₹${data.added}!`;
-            }
         });
     </script>
 </body>
