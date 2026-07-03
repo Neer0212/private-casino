@@ -33,6 +33,20 @@ app.get('/api/admin/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ==========================================
+// 🏆 PUBLIC LEADERBOARD API
+// ==========================================
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        // Fetch the top 10 richest players
+        const result = await pool.query(`SELECT username, balance FROM users ORDER BY balance DESC LIMIT 10`);
+        res.json(result.rows);
+    } catch (err) { 
+        console.error("Leaderboard DB Error:", err);
+        res.status(500).json({ error: "Failed to load leaderboard" }); 
+    }
+});
+
 function logActivity(message) {
     const time = new Date().toLocaleTimeString();
     io.emit('adminActivity', { time, message });
