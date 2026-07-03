@@ -426,6 +426,39 @@ io.on('connection', (socket) => {
     socket.on('sendReaction', (data) => io.to(data.tableId).emit('triggerReaction', { username: data.username, emoji: data.emoji }));
     socket.on('sendChat', (data) => io.to(data.tableId).emit('receiveChat', { username: data.username, message: data.message }));
 
+    // ==========================================
+    // ⚡ GOD MODE / ADMIN LISTENERS (RESTORED)
+    // ==========================================
+    socket.on('adminGetUsers', async () => {
+        try {
+            const res = await pool.query(`SELECT * FROM users ORDER BY balance DESC`);
+            socket.emit('adminUserData', res.rows);
+        } catch (err) {
+            console.error("Failed to fetch users for God Mode:", err);
+        }
+    });
+
+    socket.on('adminAddChips', async (data) => {
+        const { targetUser, amount } = data;
+        try {
+            const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [targetUser]);
+            if (res.rows.length > 0) {
+                const newBalance = res.rows[0].balance + parseInt(amount);
+                await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, targetUser]);
+
+                // Notify the user if they are online
+                const player = activePlayers.find(p => p.username === targetUser);
+                if (player) io.to(player.socketId).emit('updateBalance', newBalance);
+
+                // Broadcast the God Mode alert
+                io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, added: parseInt(amount) });
+                logActivity(`⚡ GOD MODE: Injected ₹${amount} to ${targetUser}`);
+            }
+        } catch (err) {
+            console.error("God Mode injection error:", err);
+        }
+    });
+
     socket.on('disconnect', () => {
         let player = activePlayers.find(p => p.socketId === socket.id);
         if (player) {
