@@ -260,6 +260,9 @@
         <button onclick="openInstructions()"
             style="background-color: transparent; border: 1px solid #3498db; color: #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px;">📖
             How to Play</button>
+        <button onclick="document.getElementById('floorMapModal').style.display='flex'"
+            style="background-color: transparent; border: 1px solid #e67e22; color: #e67e22; padding: 5px 15px; border-radius: 20px; font-size: 14px;">🗺️
+            Who is Online?</button>
         <a href="/poker.html"
             style="color: #3498db; text-decoration: none; font-weight: bold; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">♠️
             Play Poker</a>
@@ -486,6 +489,49 @@
             let color = data.username === "SYSTEM" ? "#ff7675" : "#f1c40f";
             hist.innerHTML += `<div><strong style="color: ${color};">${data.username}:</strong> ${data.message}</div>`;
             hist.scrollTop = hist.scrollHeight;
+        });
+    </script>
+
+    <div id="floorMapModal" class="modal-overlay" style="z-index: 1000;">
+        <div class="modal-content" style="border-color: #e67e22; max-width: 600px;">
+            <span class="close-btn" onclick="document.getElementById('floorMapModal').style.display='none'">×</span>
+            <h2 style="color: #e67e22; margin-top: 0;">🗺️ Casino Directory</h2>
+            <p style="color: #ccc; font-size: 14px;">See where the action is happening right now.</p>
+
+            <div id="floorMapContainer"
+                style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; max-height: 400px; overflow-y: auto;">
+                <p style="color: #888;">Scanning casino floor...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Listen for the telemetry broadcast
+        socket.on('liveFloorMap', (tables) => {
+            const container = document.getElementById('floorMapContainer');
+            if (tables.length === 0) {
+                container.innerHTML = `<p style="color: #888;">The casino floor is empty.</p>`;
+                return;
+            }
+
+            let html = "";
+            tables.forEach(table => {
+                // Pick an icon based on the game
+                let icon = table.game === 'blackjack' ? '♠️' : table.game === 'roulette' ? '🎡' : '🃏';
+                let color = table.game === 'blackjack' ? '#55efc4' : table.game === 'roulette' ? '#9b59b6' : '#3498db';
+
+                let playerList = table.players.join(", ");
+
+                html += `
+            <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: ${color}; font-size: 16px;">${icon} ${table.id}</strong>
+                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;">👥 ${playerList}</div>
+                </div>
+                <div style="color: #888; font-size: 12px; text-transform: uppercase;">${table.game}</div>
+            </div>`;
+            });
+            container.innerHTML = html;
         });
     </script>
 </body>
