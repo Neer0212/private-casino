@@ -253,7 +253,7 @@
 
 <body>
 
-    <h1 style="color: #f1c40f; letter-spacing: 2px;">♠️ VIP BLACKJACK ♣️</h1>
+    <h1 style="color: #f1c40f; letter-spacing: 2px;"> VIP BLACKJACK </h1>
 
     <!-- TOP NAVIGATION LINKS -->
     <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
@@ -317,11 +317,12 @@
         <h2 id="gameStatus" style="font-size: 32px; text-shadow: 2px 2px 4px #000; margin-top: 20px;"></h2>
     </div>
 
-    <!-- 💬 LIVE CHAT -->
+    <!-- LIVE CHAT -->
     <div id="chatWidget" class="chat-widget">
         <h4
             style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">
-            🔴 <span id="chatRoomName">VIP Table</span> Chat</h4>
+            <span id="chatRoomName">VIP Table</span> Chat
+        </h4>
         <div id="chatHistory"
             style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;">
         </div>
@@ -333,12 +334,12 @@
         </div>
     </div>
 
-    <!-- 📖 RESTORED INSTRUCTIONS MODAL -->
+    <!--  RESTORED INSTRUCTIONS MODAL -->
     <div id="instructionsModal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeInstructions()">×</span>
             <h2>Welcome to VIP Blackjack</h2>
-            <h4>🤝 How to Connect</h4>
+            <h4>How to Connect</h4>
             <ul>
                 <li><strong>Username:</strong> Pick a unique name. Your bank balance will save permanently!</li>
                 <li><strong>Table Name:</strong> Type a secret room name to play privately. Leave it blank for the
@@ -438,7 +439,7 @@
 
                     otherPlayersHTML += `
                         <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid #55efc4;">
-                            <h4 style="color: #f1c40f; margin: 0 0 10px 0;">👤 ${player.username}</h4>
+                            <h4 style="color: #f1c40f; margin: 0 0 10px 0;"> ${player.username}</h4>
                             <div style="display: flex; justify-content: center;">${miniCardsHTML}</div>
                             <p style="margin: 5px 0 0 0; font-size: 14px; color: #ccc;">Score: ${player.score}</p>
                             <button class="tip-btn" onclick="sendTip('${player.username}')">Tip ₹100</button>
@@ -517,7 +518,7 @@
             let html = "";
             tables.forEach(table => {
                 // Pick an icon based on the game
-                let icon = table.game === 'blackjack' ? '♠️' : table.game === 'roulette' ? '🎡' : '🃏';
+                let icon = table.game === 'blackjack' ? '' : table.game === 'roulette' ? '' : '';
                 let color = table.game === 'blackjack' ? '#55efc4' : table.game === 'roulette' ? '#9b59b6' : '#3498db';
 
                 let playerList = table.players.join(", ");
@@ -526,7 +527,7 @@
             <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="color: ${color}; font-size: 16px;">${icon} ${table.id}</strong>
-                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;">👥 ${playerList}</div>
+                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;"> ${playerList}</div>
                 </div>
                 <div style="color: #888; font-size: 12px; text-transform: uppercase;">${table.game}</div>
             </div>`;

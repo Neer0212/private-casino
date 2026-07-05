@@ -242,7 +242,7 @@
 
 <body>
 
-    <h1 style="color: #9b59b6; letter-spacing: 2px;">🎡 VIP ROULETTE 🎡</h1>
+    <h1 style="color: #9b59b6; letter-spacing: 2px;"> VIP ROULETTE </h1>
 
     <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
         <button onclick="openInstructions()"
@@ -305,11 +305,12 @@
         </div>
     </div>
 
-    <!-- 💬 LIVE CHAT -->
+    <!--  LIVE CHAT -->
     <div id="chatWidget" class="chat-widget">
         <h4
             style="color: #9b59b6; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #9b59b6; padding-bottom: 5px;">
-            🟣 <span id="chatRoomName">Roulette</span> Chat</h4>
+            <span id="chatRoomName">Roulette</span> Chat
+        </h4>
         <div id="chatHistory"
             style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;">
         </div>
@@ -321,13 +322,13 @@
         </div>
     </div>
 
-    <!-- 📖 INSTRUCTIONS MODAL -->
+    <!--  INSTRUCTIONS MODAL -->
     <div id="instructionsModal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeInstructions()">×</span>
             <h2>Welcome to VIP Roulette</h2>
 
-            <h4>🎯 How to Bet</h4>
+            <h4>How to Bet</h4>
             <ul>
                 <li>Type your target into the box. You can bet on <strong>Red</strong>, <strong>Black</strong>,
                     <strong>Even</strong>, <strong>Odd</strong>, or a specific number from <strong>0 to 36</strong>.
@@ -335,7 +336,7 @@
                 <li>Enter your bet amount and click <strong>Lock Bet</strong>.</li>
             </ul>
 
-            <h4>🛡️ The Spin Rule</h4>
+            <h4>The Spin Rule</h4>
             <ul>
                 <li><strong>Important:</strong> If you do not click "Lock Bet", your money will NOT be debited, even if
                     another player spins the wheel. You are completely safe until you lock it in.</li>
@@ -343,7 +344,7 @@
                     at the table.</li>
             </ul>
 
-            <h4>💰 Payouts</h4>
+            <h4>Payouts</h4>
             <ul>
                 <li><strong>Colors & Odds/Evens:</strong> Pays out 2x your bet.</li>
                 <li><strong>Specific Numbers:</strong> Hits the jackpot and pays out 36x your bet!</li>
@@ -471,7 +472,7 @@
     <div id="floorMapModal" class="modal-overlay" style="z-index: 1000;">
         <div class="modal-content" style="border-color: #e67e22; max-width: 600px;">
             <span class="close-btn" onclick="document.getElementById('floorMapModal').style.display='none'">×</span>
-            <h2 style="color: #e67e22; margin-top: 0;">🗺️ Casino Directory</h2>
+            <h2 style="color: #e67e22; margin-top: 0;">Casino Directory</h2>
             <p style="color: #ccc; font-size: 14px;">See where the action is happening right now.</p>
 
             <div id="floorMapContainer"
@@ -493,7 +494,7 @@
             let html = "";
             tables.forEach(table => {
                 // Pick an icon based on the game
-                let icon = table.game === 'blackjack' ? '♠️' : table.game === 'roulette' ? '🎡' : '🃏';
+                let icon = table.game === 'blackjack' ? '' : table.game === 'roulette' ? '' : '';
                 let color = table.game === 'blackjack' ? '#55efc4' : table.game === 'roulette' ? '#9b59b6' : '#3498db';
 
                 let playerList = table.players.join(", ");
@@ -502,7 +503,7 @@
             <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="color: ${color}; font-size: 16px;">${icon} ${table.id}</strong>
-                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;">👥 ${playerList}</div>
+                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;"> ${playerList}</div>
                 </div>
                 <div style="color: #888; font-size: 12px; text-transform: uppercase;">${table.game}</div>
             </div>`;

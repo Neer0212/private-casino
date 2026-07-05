@@ -11,7 +11,7 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- CLOUD DATABASE SETUP ---
+// CLOUD DATABASE CONNECTION
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
@@ -33,17 +33,17 @@ app.get('/api/admin/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ==========================================
-// 🏆 PUBLIC LEADERBOARD API
-// ==========================================
+
+// PUBLIC LEADERBOARD API
+
 app.get('/api/leaderboard', async (req, res) => {
     try {
         // Fetch the top 10 richest players
         const result = await pool.query(`SELECT username, balance FROM users ORDER BY balance DESC LIMIT 10`);
         res.json(result.rows);
-    } catch (err) { 
+    } catch (err) {
         console.error("Leaderboard DB Error:", err);
-        res.status(500).json({ error: "Failed to load leaderboard" }); 
+        res.status(500).json({ error: "Failed to load leaderboard" });
     }
 });
 
@@ -55,9 +55,9 @@ function logActivity(message) {
 let activePlayers = [];
 let tableStates = {};
 
-// ==========================================
+
 // CARD ENGINE (Shared)
-// ==========================================
+
 const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
@@ -78,9 +78,9 @@ function calculateScore(hand) {
     return score;
 }
 
-// ==========================================
-// BLACKJACK & ROULETTE (Skipped definitions for brevity, logic remains identical)
-// ==========================================
+
+// BLACKJACK & ROULETTE 
+
 function initTable(tableId) {
     if (!tableStates[tableId]) tableStates[tableId] = { deck: createDeck(), dealer: { hand: [], score: 0 } };
 }
@@ -125,9 +125,9 @@ function getRouletteColor(num) { return num === 0 ? 'Green' : redNumbers.include
 function broadcastRouletteState(tableId) { io.to(tableId).emit('rouletteStateUpdate', activePlayers.filter(p => p.tableId === tableId && p.game === 'roulette')); }
 
 
-// ==========================================
-// TEXAS HOLD'EM POKER ENGINE (Phase 3 - Betting)
-// ==========================================
+
+// TEXAS HOLD'EM POKER ENGINE 
+
 let pokerRooms = {};
 
 function toPokerFormat(card) {
@@ -177,9 +177,9 @@ function nextTurn(tableId) {
     }
 }
 
-// ==========================================
+
 // SOCKET CONNECTIONS
-// ==========================================
+
 io.on('connection', (socket) => {
 
     async function getUserBalance(username) {
@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
         if (player) io.to(player.socketId).emit('updateBalance', newBalance);
     }
 
-    // --- GOD MODE (RESTORED) ---
+    // GOD MODE 
     socket.on('adminGetUsers', async () => {
         try {
             const res = await pool.query(`SELECT username, balance FROM users ORDER BY balance DESC`);
@@ -215,7 +215,7 @@ io.on('connection', (socket) => {
         } catch (err) { }
     });
 
-    // --- BLACKJACK LISTENERS ---
+    //BLACKJACK LISTENERS 
     socket.on('joinTable', async (data) => {
         const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "Public-1";
         socket.join(tableId); initTable(tableId);
@@ -245,7 +245,7 @@ io.on('connection', (socket) => {
         if (player && player.status === 'playing') { player.status = 'stood'; socket.emit('gameStatus', 'Waiting...'); broadcastTableState(tableId); checkRoundEnd(tableId); }
     });
 
-    // --- ROULETTE LISTENERS ---
+    //  ROULETTE LISTENERS 
     socket.on('joinRoulette', async (data) => {
         const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "Roulette-1";
         socket.join(tableId);
@@ -295,7 +295,7 @@ io.on('connection', (socket) => {
         setTimeout(() => broadcastRouletteState(tableId), 3000);
     });
 
-    // --- POKER LISTENERS (PHASE 3 - BETTING) ---
+    // POKER LISTENERS 
     socket.on('joinPoker', async (data) => {
         const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "Texas-1";
         socket.join(tableId);
@@ -455,7 +455,7 @@ io.on('connection', (socket) => {
         players.forEach(p => p.currentBet = 0);
     }
 
-    // --- SOCIAL FEATURES (TIPS & EMOJIS) ---
+    // SOCIAL FEATURES (TIPS & EMOJIS)
     socket.on('tipPlayer', async (data) => {
         const { tableId, sender, receiver, amount } = data;
         try {
@@ -485,9 +485,9 @@ io.on('connection', (socket) => {
     });
 });
 
-// ==========================================
-// 🗺️ CASINO FLOOR TELEMETRY (LIVE MAP)
-// ==========================================
+
+// CASINO FLOOR TELEMETRY 
+
 function broadcastFloorState() {
     let floorMap = {};
 

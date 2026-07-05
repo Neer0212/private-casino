@@ -410,7 +410,8 @@
     <div id="chatWidget" class="chat-widget">
         <h4
             style="color: #3498db; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #3498db; padding-bottom: 5px;">
-            🔵 <span id="chatRoomName">Poker</span> Chat</h4>
+            <span id="chatRoomName">Poker</span> Chat
+        </h4>
         <div id="chatHistory"
             style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;">
         </div>
@@ -427,7 +428,7 @@
             <span class="close-btn" onclick="closeInstructions()">×</span>
             <h2>Welcome to VIP Texas Hold'em</h2>
 
-            <h4>🃏 How the Game Works</h4>
+            <h4>How the Game Works</h4>
             <ul>
                 <li><strong>The Ante:</strong> When a new hand begins, the server automatically pulls a <strong>₹50
                         Ante</strong> from all seated players to start the Main Pot.</li>
@@ -439,7 +440,7 @@
                 </li>
             </ul>
 
-            <h4>💰 Betting Actions</h4>
+            <h4>Betting Actions</h4>
             <ul>
                 <li><strong>Wait Your Turn:</strong> Your buttons will highlight green when it is your turn to act.</li>
                 <li><strong>Check / Call:</strong> Match the current highest bet to stay in the hand. If no one has bet,
@@ -449,7 +450,7 @@
                     out until the next hand.</li>
             </ul>
 
-            <h4>🏆 The Showdown</h4>
+            <h4>The Showdown</h4>
             <ul>
                 <li>After the River (the 5th community card), the math engine automatically flips everyone's cards and
                     awards the entire Main Pot to the best hand!</li>
@@ -544,7 +545,7 @@
 
                     otherPlayersHTML += `
                         <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; ${borderStyle}; margin-bottom: 10px;">
-                            <h4 style="color: #3498db; margin: 0 0 5px 0;">👤 ${p.username}</h4>
+                            <h4 style="color: #3498db; margin: 0 0 5px 0;">${p.username}</h4>
                             <p style="margin: 0 0 10px 0; font-size: 12px; color: #ccc;">${statusText}</p>
                             <div style="display: flex; justify-content: center;">${cardsHTML}</div>
                             ${handText}
@@ -565,12 +566,12 @@
 
                 let callAmount = data.highestBet - myCurrentBet;
                 btnCall.innerText = callAmount > 0 ? `Call (₹${callAmount})` : "Check";
-                turnInd.innerText = "🟩 IT IS YOUR TURN!";
+                turnInd.innerText = "IT IS YOUR TURN!";
                 turnInd.style.color = "#2ecc71";
             } else {
                 btnFold.disabled = true; btnCall.disabled = true; btnRaise.disabled = true;
                 btnCall.innerText = "Check / Call";
-                turnInd.innerText = data.stage === 'showdown' ? "Hand Over" : "🟥 Waiting for others...";
+                turnInd.innerText = data.stage === 'showdown' ? "Hand Over" : "Waiting for others...";
                 turnInd.style.color = "#e74c3c";
             }
         });
@@ -635,7 +636,7 @@
             let html = "";
             tables.forEach(table => {
                 // Pick an icon based on the game
-                let icon = table.game === 'blackjack' ? '♠️' : table.game === 'roulette' ? '🎡' : '🃏';
+                let icon = table.game === 'blackjack' ? '' : table.game === 'roulette' ? '' : '';
                 let color = table.game === 'blackjack' ? '#55efc4' : table.game === 'roulette' ? '#9b59b6' : '#3498db';
 
                 let playerList = table.players.join(", ");
@@ -644,7 +645,7 @@
             <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="color: ${color}; font-size: 16px;">${icon} ${table.id}</strong>
-                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;">👥 ${playerList}</div>
+                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;"> ${playerList}</div>
                 </div>
                 <div style="color: #888; font-size: 12px; text-transform: uppercase;">${table.game}</div>
             </div>`;
