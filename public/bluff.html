@@ -220,7 +220,7 @@
 
             <div id="bluffActions"
                 style="margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 10px; padding: 15px; display: inline-block;">
-                <p style="color: #ccc; font-size: 14px; margin-top: 0;">Select up to 4 cards, then declare their rank:
+                <p style="color: #ccc; font-size: 14px; margin-top: 0;">Select cards, then declare their rank:
                 </p>
                 <select id="rankSelector">
                     <option value="2">2s</option>
@@ -289,8 +289,7 @@
             if (pos > -1) {
                 selectedCardsIndices.splice(pos, 1);
             } else {
-                if (selectedCardsIndices.length < 4) selectedCardsIndices.push(index);
-                else alert("You can only play up to 4 cards at once.");
+                selectedCardsIndices.push(index);
             }
             renderMyHand(window.myCurrentHand || []);
             document.getElementById('btnPlayCards').disabled = selectedCardsIndices.length === 0;
@@ -331,9 +330,10 @@
 
         function sendAction(action) {
             socket.emit('bluffAction', { tableId: currentTable, action });
-            function resolveBluff(index) {
-                socket.emit('resolveBluffCard', { tableId: currentTable, cardIndex: index });
-            }
+        }
+
+        function resolveBluff(index) {
+            socket.emit('resolveBluffCard', { tableId: currentTable, cardIndex: index });
         }
 
         // MOCK LISTENER FOR UI TESTING (Will be replaced in Phase 2)
