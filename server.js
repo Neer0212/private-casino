@@ -235,7 +235,9 @@ function broadcastBluffState(tableId) {
         stage: table.stage,
         pileCount: table.centerPile.length,
         latestClaim: table.latestClaim,
-        players: safePlayers
+        players: safePlayers,
+        lastPlayedCount: table.lastPlayedCards ? table.lastPlayedCards.length : 0, // Tell UI how many cards were played
+        accuser: table.accuser || "" // Tell UI who is picking
     });
 }
 
@@ -552,25 +554,52 @@ io.on('connection', (socket) => {
         let accuser = activePlayers.find(p => p.socketId === socket.id && p.game === 'bluff');
 
         if (action === 'call_bluff' && table && table.stage === 'interrogation') {
-            clearTimeout(table.timer); 
+            clearTimeout(table.timer); // Stop the auto-turn clock!
             
+            // Enter the new Card Selection state
+            table.stage = 'bluff_called';
+            table.accuser = accuser.username;
+            
+            io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🚨 BLUFF CALLED by ${accuser.username}! They must pick one card to reveal.` });
+            broadcastBluffState(tableId);
+        }
+    });
+
+    // NEW LISTENER: When the accuser clicks a specific card
+    socket.on('resolveBluffCard', (data) => {
+        const { tableId, cardIndex } = data;
+        let table = bluffRooms[tableId];
+        let accuser = activePlayers.find(p => p.socketId === socket.id && p.game === 'bluff');
+
+        // Security check: Only the accuser can trigger this while in the bluff_called stage
+        if (table && table.stage === 'bluff_called' && accuser && accuser.username === table.accuser) {
             let claimedRank = table.latestClaim.split(' ').pop().replace('(s)', ''); 
-            let isLie = table.lastPlayedCards.some(card => card.value !== claimedRank);
+            
+            // Get the specific card they clicked
+            let selectedCard = table.lastPlayedCards[cardIndex];
+            let isLie = selectedCard.value !== claimedRank;
             
             let accusedPlayer = activePlayers.find(p => p.username === table.lastPlayer && p.tableId === tableId);
             
             if (isLie) {
+                // The specific card was a lie! First player gets the pile.
                 if (accusedPlayer) accusedPlayer.hand.push(...table.centerPile);
-                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🚨 BLUFF CAUGHT! ${accusedPlayer ? accusedPlayer.username : 'They'} lied and picked up ${table.centerPile.length} cards!` });
+                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🚨 CAUGHT! Card was ${selectedCard.value} of ${selectedCard.suit}. ${accusedPlayer ? accusedPlayer.username : 'Liar'} picks up ${table.centerPile.length} cards!` });
             } else {
+                // The specific card was truth! Accuser gets the pile.
                 if (accuser) accuser.hand.push(...table.centerPile);
-                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `❌ FALSE ALARM! ${accuser ? accuser.username : 'Accuser'} was wrong and picked up ${table.centerPile.length} cards!` });
+                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `❌ TRUTH! Card was ${selectedCard.value} of ${selectedCard.suit}. ${accuser.username} was wrong and picks up ${table.centerPile.length} cards!` });
             }
 
+            // Sync updated hands
             if (accusedPlayer) io.to(accusedPlayer.socketId).emit('receiveBluffHand', accusedPlayer.hand);
             if (accuser) io.to(accuser.socketId).emit('receiveBluffHand', accuser.hand);
 
-            table.centerPile = []; table.stage = 'playing'; table.latestClaim = "Pile cleared. Next turn.";
+            // Reset the table for the next turn
+            table.centerPile = []; 
+            table.stage = 'playing'; 
+            table.latestClaim = "Pile cleared. Next turn.";
+            table.accuser = "";
             
             let activeOnly = activePlayers.filter(p => p.tableId === tableId && p.game === 'bluff' && p.hand.length > 0);
             if(activeOnly.length > 0) table.turnIndex = (table.turnIndex + 1) % activeOnly.length;
