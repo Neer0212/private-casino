@@ -237,6 +237,7 @@ function broadcastBluffState(tableId) {
         stage: table.stage,
         pileCount: table.centerPile.length,
         latestClaim: table.latestClaim,
+        lastPlayer: table.lastPlayer || "",
         players: safePlayers,
         lastPlayedCount: table.lastPlayedCards ? table.lastPlayedCards.length : 0,
         accuser: table.accuser || "",

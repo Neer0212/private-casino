@@ -251,7 +251,7 @@
                 playArea.style.opacity = '0.5';
                 playArea.style.pointerEvents = 'none';
 
-                if (data.latestClaim.indexOf(myUsername) === -1) {
+                if (data.lastPlayer !== myUsername) {
                     btnCallBluff.style.display = 'block';
                 }
             }
