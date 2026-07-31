@@ -177,8 +177,7 @@
             socket.emit('joinBluff', { tableId: currentTable, username });
 
             document.getElementById('status').innerText = `Sitting at ${currentTable}`;
-            document.getElementById('chatRoomName').innerText = currentTable;
-            document.getElementById('bluffBoard').style.display = "block";
+                        document.getElementById('bluffBoard').style.display = "block";
         }
 
         function devStartGame() { socket.emit('devStartBluff', currentTable); }

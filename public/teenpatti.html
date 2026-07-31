@@ -159,8 +159,7 @@
             socket.emit('joinTeenPatti', { tableId: currentTable, username });
 
             document.getElementById('status').innerText = `Sitting at ${currentTable}`;
-            document.getElementById('chatRoomName').innerText = currentTable;
-            document.getElementById('tpBoard').style.display = "block";
+                        document.getElementById('tpBoard').style.display = "block";
             document.getElementById('reactionBar').style.display = "inline-block";
         }
 

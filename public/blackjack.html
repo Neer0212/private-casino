@@ -134,8 +134,7 @@
             socket.emit('joinTable', { tableId: currentTable, username, betAmount });
 
             document.getElementById('status').innerText = `Playing as ${username} at ${currentTable}`;
-            document.getElementById('chatRoomName').innerText = currentTable;
-            document.getElementById('gameStatus').innerText = "";
+                        document.getElementById('gameStatus').innerText = "";
             document.getElementById('dealerMessages').innerText = "Dealer waiting...";
             document.getElementById('dealerCards').innerHTML = "";
             document.getElementById('actionButtons').style.display = "none";

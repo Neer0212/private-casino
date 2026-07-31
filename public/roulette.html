@@ -142,8 +142,7 @@
             socket.emit('joinRoulette', { tableId: currentTable, username });
 
             document.getElementById('status').innerText = `Playing as ${username} at ${currentTable}`;
-            document.getElementById('chatRoomName').innerText = currentTable;
-            document.getElementById('wheelContainer').style.display = "block";
+                        document.getElementById('wheelContainer').style.display = "block";
             document.getElementById('reactionBar').style.display = "inline-block";
             document.getElementById('wheelResult').innerText = "?";
             document.getElementById('wheelResult').className = "wheel-result";
