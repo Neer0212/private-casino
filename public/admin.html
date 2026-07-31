@@ -73,7 +73,8 @@
         <h3>CHIP INJECTOR</h3>
         <input type="text" id="targetUser" placeholder="Target Username">
         <input type="number" id="chipAmount" placeholder="Amount (e.g. 5000)">
-        <button onclick="injectChips()">EXECUTE INJECTION</button>
+        <button onclick="injectChips()">EXECUTE INJECTION (+)</button>
+        <button onclick="extractChips()" style="border-color: #ff0000; color: #ff0000;" onmouseover="this.style.background='#ff0000'; this.style.color='#000';" onmouseout="this.style.background='#000'; this.style.color='#ff0000';">EXECUTE EXTRACTION (-)</button>
     </div>
 
     <h2>DATABASE RECORDS</h2>
@@ -110,6 +111,18 @@
 
             if (user && amount) {
                 socket.emit('adminAddChips', { targetUser: user, amount: amount });
+                document.getElementById('targetUser').value = ""; // clear input
+                document.getElementById('chipAmount').value = ""; // clear input
+            }
+        }
+        
+        // Tell the server to remove chips
+        function extractChips() {
+            const user = document.getElementById('targetUser').value;
+            const amount = document.getElementById('chipAmount').value;
+
+            if (user && amount) {
+                socket.emit('adminRemoveChips', { targetUser: user, amount: amount });
                 document.getElementById('targetUser').value = ""; // clear input
                 document.getElementById('chipAmount').value = ""; // clear input
             }

@@ -316,6 +316,7 @@ io.on('connection', (socket) => {
     }
 
     async function updateBalance(username, newBalance) {
+        newBalance = Math.max(0, Math.min(100000000, newBalance));
         await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, username]);
         const player = activePlayers.find(p => p.username === username);
         if (player) io.to(player.socketId).emit('updateBalance', newBalance);
@@ -333,12 +334,31 @@ io.on('connection', (socket) => {
         try {
             const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [targetUser]);
             if (res.rows.length > 0) {
-                const newBalance = res.rows[0].balance + parseInt(amount);
+                let newBalance = res.rows[0].balance + parseInt(amount);
+                newBalance = Math.max(0, Math.min(100000000, newBalance));
                 await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, targetUser]);
                 io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, added: parseInt(amount) });
-                logActivity(`⚡ GOD MODE: Injected ₹${amount} to ${targetUser}`);
+                // Notify the user
+                const player = activePlayers.find(p => p.username === targetUser);
+                if (player) io.to(player.socketId).emit('updateBalance', newBalance);
             }
-        } catch (err) {}
+        } catch (err) { console.error(err); }
+    });
+
+    socket.on('adminRemoveChips', async (data) => {
+        const { targetUser, amount } = data;
+        try {
+            const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [targetUser]);
+            if (res.rows.length > 0) {
+                let newBalance = res.rows[0].balance - parseInt(amount);
+                newBalance = Math.max(0, Math.min(100000000, newBalance));
+                await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, targetUser]);
+                io.emit('godModeUpdate', { username: targetUser, newBalance: newBalance, removed: parseInt(amount) });
+                // Notify the user
+                const player = activePlayers.find(p => p.username === targetUser);
+                if (player) io.to(player.socketId).emit('updateBalance', newBalance);
+            }
+        } catch (err) { console.error(err); }
     });
 
     // --- ♠️ BLACKJACK LISTENERS ---
