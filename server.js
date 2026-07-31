@@ -236,8 +236,11 @@ function broadcastBluffState(tableId) {
         pileCount: table.centerPile.length,
         latestClaim: table.latestClaim,
         players: safePlayers,
-        lastPlayedCount: table.lastPlayedCards ? table.lastPlayedCards.length : 0, // Tell UI how many cards were played
-        accuser: table.accuser || "" // Tell UI who is picking
+        lastPlayedCount: table.lastPlayedCards ? table.lastPlayedCards.length : 0,
+        accuser: table.accuser || "",
+        revealedCard: table.revealedCard || null,
+        isLie: table.isLie || false,
+        bluffResultText: table.bluffResultText || ""
     });
 }
 
@@ -486,7 +489,8 @@ io.on('connection', (socket) => {
         if (!bluffRooms[tableId]) bluffRooms[tableId] = { centerPile: [], stage: 'waiting', turnIndex: 0, latestClaim: "", lastPlayedCards: [], lastPlayer: null, timer: null };
         
         const player = { socketId: socket.id, username: data.username, tableId, hand: [], game: 'bluff' };
-        activePlayers = activePlayers.filter(p => p.socketId !== socket.id); activePlayers.push(player);
+        activePlayers = activePlayers.filter(p => p.socketId !== socket.id && !(p.username === data.username && p.game === 'bluff')); 
+        activePlayers.push(player);
         
         broadcastBluffState(tableId);
         io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `👋 ${data.username} sat down.` });
@@ -500,8 +504,12 @@ io.on('connection', (socket) => {
 
         table.deck = createDeck(); table.centerPile = []; table.stage = 'playing'; table.turnIndex = 0; table.latestClaim = "Game started! Waiting for first move...";
 
+        players.forEach(p => p.hand = []);
+        let cardsPerPlayer = Math.floor(table.deck.length / players.length);
+        let totalCardsToDeal = cardsPerPlayer * players.length;
+
         let pIndex = 0;
-        while(table.deck.length > 0) {
+        while(pIndex < totalCardsToDeal) {
             players[pIndex % players.length].hand.push(table.deck.pop());
             pIndex++;
         }
@@ -529,7 +537,7 @@ io.on('connection', (socket) => {
         io.to(player.socketId).emit('receiveBluffHand', player.hand);
         
         table.stage = 'interrogation';
-        io.to(tableId).emit('startInterrogationTimer', { seconds: 5 });
+        io.to(tableId).emit('startInterrogationTimer', { seconds: 10 });
         broadcastBluffState(tableId);
         io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `👀 ${table.latestClaim}. Bluff?` });
 
@@ -545,7 +553,7 @@ io.on('connection', (socket) => {
                 }
                 broadcastBluffState(tableId);
             }
-        }, 5000);
+        }, 10000);
     });
 
     socket.on('bluffAction', (data) => {
@@ -581,30 +589,40 @@ io.on('connection', (socket) => {
             
             let accusedPlayer = activePlayers.find(p => p.username === table.lastPlayer && p.tableId === tableId);
             
-            if (isLie) {
-                // The specific card was a lie! First player gets the pile.
-                if (accusedPlayer) accusedPlayer.hand.push(...table.centerPile);
-                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🚨 CAUGHT! Card was ${selectedCard.value} of ${selectedCard.suit}. ${accusedPlayer ? accusedPlayer.username : 'Liar'} picks up ${table.centerPile.length} cards!` });
-            } else {
-                // The specific card was truth! Accuser gets the pile.
-                if (accuser) accuser.hand.push(...table.centerPile);
-                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `❌ TRUTH! Card was ${selectedCard.value} of ${selectedCard.suit}. ${accuser.username} was wrong and picks up ${table.centerPile.length} cards!` });
-            }
-
-            // Sync updated hands
-            if (accusedPlayer) io.to(accusedPlayer.socketId).emit('receiveBluffHand', accusedPlayer.hand);
-            if (accuser) io.to(accuser.socketId).emit('receiveBluffHand', accuser.hand);
-
-            // Reset the table for the next turn
-            table.centerPile = []; 
-            table.stage = 'playing'; 
-            table.latestClaim = "Pile cleared. Next turn.";
-            table.accuser = "";
+            table.stage = 'bluff_revealed';
+            table.revealedCard = selectedCard;
+            table.isLie = isLie;
+            let accusedName = accusedPlayer ? accusedPlayer.username : 'Liar';
+            table.bluffResultText = isLie ? 
+                `🚨 CAUGHT! ${accusedName} lied and picks up ${table.centerPile.length} cards!` : 
+                `❌ TRUTH! ${accuser.username} was wrong and picks up ${table.centerPile.length} cards!`;
             
-            let activeOnly = activePlayers.filter(p => p.tableId === tableId && p.game === 'bluff' && p.hand.length > 0);
-            if(activeOnly.length > 0) table.turnIndex = (table.turnIndex + 1) % activeOnly.length;
-            
+            io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: table.bluffResultText });
             broadcastBluffState(tableId);
+
+            setTimeout(() => {
+                if (isLie) {
+                    if (accusedPlayer) accusedPlayer.hand.push(...table.centerPile);
+                } else {
+                    if (accuser) accuser.hand.push(...table.centerPile);
+                }
+
+                if (accusedPlayer) io.to(accusedPlayer.socketId).emit('receiveBluffHand', accusedPlayer.hand);
+                if (accuser) io.to(accuser.socketId).emit('receiveBluffHand', accuser.hand);
+
+                table.centerPile = []; 
+                table.stage = 'playing'; 
+                table.latestClaim = "Pile cleared. Next turn.";
+                table.accuser = "";
+                delete table.revealedCard;
+                delete table.isLie;
+                delete table.bluffResultText;
+                
+                let activeOnly = activePlayers.filter(p => p.tableId === tableId && p.game === 'bluff' && p.hand.length > 0);
+                if(activeOnly.length > 0) table.turnIndex = (table.turnIndex + 1) % activeOnly.length;
+                
+                broadcastBluffState(tableId);
+            }, 4000);
         }
     });
 

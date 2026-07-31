@@ -418,6 +418,30 @@
                         cardPickerCards.innerHTML = ""; // Hide the clickable cards from non-accusers
                     }
                 }
+                else if (data.stage === 'bluff_revealed') {
+                    btnCallBluff.style.display = 'none';
+                    timerBar.style.width = '0%';
+                    playArea.style.opacity = '0.5';
+                    playArea.style.pointerEvents = 'none';
+
+                    cardPickerArea.style.display = 'block';
+                    turnInd.innerText = data.isLie ? "🚨 LIE DETECTED!" : "✅ IT WAS THE TRUTH!";
+                    turnInd.style.color = data.isLie ? "#e74c3c" : "#2ecc71";
+                    
+                    document.getElementById('cardPickerText').innerText = data.bluffResultText;
+                    
+                    if (data.revealedCard) {
+                        let symbol = "", colorClass = "";
+                        if (data.revealedCard.suit === 'Hearts') { symbol = "♥"; colorClass = "red"; }
+                        if (data.revealedCard.suit === 'Diamonds') { symbol = "♦"; colorClass = "red"; }
+                        if (data.revealedCard.suit === 'Clubs') { symbol = "♣"; colorClass = "black"; }
+                        if (data.revealedCard.suit === 'Spades') { symbol = "♠"; colorClass = "black"; }
+                        cardPickerCards.innerHTML = `<div class="card ${colorClass}" data-value="${data.revealedCard.value}" style="cursor: default; border-color: ${data.isLie ? '#e74c3c' : '#2ecc71'}; transform: scale(1.2);">
+                                                        <div>${data.revealedCard.value}</div>
+                                                        <div style="font-size: 24px;">${symbol}</div>
+                                                    </div>`;
+                    }
+                }
                 else if (data.stage === 'playing') {
                     timerBar.style.width = '0%';
                     btnCallBluff.style.display = 'none';
