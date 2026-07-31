@@ -1,26 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>God Mode - Admin Panel</title>
-    <link rel="stylesheet" href="/css/style.css">
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
             background-color: #000;
-            background-image: none;
-            color: var(--neon-green);
+            color: #00ff00;
             padding: 40px;
         }
 
         h1 {
-            border-bottom: 2px solid var(--neon-green);
+            border-bottom: 2px solid #00ff00;
             padding-bottom: 10px;
-            color: var(--neon-green);
-            text-shadow: 0 0 10px rgba(85, 239, 196, 0.5);
-            background: none;
-            -webkit-text-fill-color: var(--neon-green);
         }
 
         table {
@@ -28,63 +23,60 @@
             border-collapse: collapse;
             margin-top: 20px;
             font-size: 18px;
-            background: rgba(0, 30, 0, 0.5);
         }
 
-        th, td {
-            border: 1px solid var(--neon-green);
+        th,
+        td {
+            border: 1px solid #00ff00;
             padding: 10px;
             text-align: left;
         }
 
         th {
             background-color: #003300;
-            color: #fff;
         }
 
         .control-panel {
-            background-color: #050a05;
+            background-color: #111;
             padding: 20px;
-            border: 1px solid var(--neon-green);
+            border: 1px solid #00ff00;
             margin-top: 30px;
-            box-shadow: 0 0 15px rgba(85, 239, 196, 0.2);
         }
 
-        input, button {
+        input,
+        button {
             padding: 10px;
             font-size: 16px;
             margin: 5px;
             background: #000;
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            font-family: 'Courier New', Courier, monospace;
+            border: 1px solid #00ff00;
+            color: #00ff00;
         }
 
         button {
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.2s;
         }
 
         button:hover {
-            background: var(--neon-green);
+            background: #00ff00;
             color: #000;
-            box-shadow: 0 0 10px var(--neon-green);
         }
     </style>
 </head>
+
 <body>
 
-    <h1>> CASINO MAINFRAME // ADMIN_ACCESS</h1>
+    <h1> CASINO MAINFRAME // ADMIN</h1>
 
     <div class="control-panel">
-        <h3 style="margin-top: 0;">> CHIP_INJECTOR.exe</h3>
+        <h3>CHIP INJECTOR</h3>
         <input type="text" id="targetUser" placeholder="Target Username">
         <input type="number" id="chipAmount" placeholder="Amount (e.g. 5000)">
         <button onclick="injectChips()">EXECUTE INJECTION</button>
     </div>
 
-    <h2 style="margin-top: 40px; color: var(--neon-green);">> DATABASE_RECORDS</h2>
+    <h2>DATABASE RECORDS</h2>
     <table id="userTable">
         <tr>
             <th>Username</th>
@@ -92,37 +84,37 @@
         </tr>
     </table>
 
-    <div style="margin-top: 30px;">
-        <a href="/" style="color: var(--neon-green); text-decoration: none;">> RETURN TO LOBBY</a>
-    </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
 
+        // Ask the server for the user list immediately upon loading the page
         socket.emit('adminGetUsers');
 
+        // Catch the user list from the server and build the table
         socket.on('adminUserData', (users) => {
             let tableHTML = `<tr><th>Username</th><th>Current Balance</th></tr>`;
             users.forEach(user => {
                 tableHTML += `<tr>
                                 <td>${user.username}</td>
-                                <td>₹${user.balance}</td>
+                                <td>$${user.balance}</td>
                               </tr>`;
             });
             document.getElementById('userTable').innerHTML = tableHTML;
         });
 
+        // Tell the server to add chips
         function injectChips() {
             const user = document.getElementById('targetUser').value;
             const amount = document.getElementById('chipAmount').value;
 
             if (user && amount) {
                 socket.emit('adminAddChips', { targetUser: user, amount: amount });
-                document.getElementById('targetUser').value = ""; 
-                document.getElementById('chipAmount').value = ""; 
+                document.getElementById('targetUser').value = ""; // clear input
+                document.getElementById('chipAmount').value = ""; // clear input
             }
         }
     </script>
 </body>
+
 </html>

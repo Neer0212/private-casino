@@ -91,19 +91,7 @@
             </div>
         </div>
 
-        <div class="sidebar-area">
-            <div id="chatWidget" class="chat-widget">
-                <h4 style="color: var(--neon-gold); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--neon-gold); padding-bottom: 5px;">
-                    <span id="chatRoomName">Teen Patti</span> Chat
-                </h4>
-                <div id="chatHistory" class="chat-history">
-                </div>
-                <div class="chat-input-group">
-                    <input type="text" id="chatInput" placeholder="Talk trash here...">
-                    <button onclick="sendChat()" style="background: var(--neon-gold); color: black;">Send</button>
-                </div>
-            </div>
-        </div>
+        
     </div>
 
     <!-- INSTRUCTIONS MODAL -->
@@ -286,21 +274,7 @@
             setTimeout(() => { emojiEl.remove(); }, 2500);
         });
 
-        function sendChat() {
-            const input = document.getElementById('chatInput');
-            const username = document.getElementById('usernameInput').value || "Anon";
-            if (input.value.trim() !== "" && currentTable !== "") {
-                socket.emit('sendChat', { tableId: currentTable, username, message: input.value });
-                input.value = "";
-            }
-        }
-        document.getElementById("chatInput").addEventListener("keypress", e => { if (e.key === "Enter") sendChat(); });
-        socket.on('receiveChat', (data) => {
-            const hist = document.getElementById('chatHistory');
-            let color = data.username === "SYSTEM" ? "var(--neon-gold)" : "var(--neon-blue)";
-            hist.innerHTML += `<div><strong style="color: ${color};">${data.username}:</strong> ${data.message}</div>`;
-            hist.scrollTop = hist.scrollHeight;
-        });
+        
 
         socket.on('liveFloorMap', (tables) => {
             const container = document.getElementById('floorMapContainer');
