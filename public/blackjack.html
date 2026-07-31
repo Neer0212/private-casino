@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Blackjack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <h1 class="text-gold">VIP BLACKJACK</h1>
+
+    <!-- TOP NAVIGATION LINKS -->
+    <div class="nav-links">
+        <a href="/" class="nav-leaderboard">🏠 Casino Lobby</a>
+        <button onclick="openInstructions()" class="nav-blackjack">📖 How to Play</button>
+        <button onclick="document.getElementById('floorMapModal').style.display='flex'" class="nav-poker">🗺️ Who is Online?</button>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+        
+        <!-- GAME AREA -->
+        <div class="game-area">
+            <div class="table" id="gameTable">
+                <div class="glass-panel" style="margin-bottom: 20px;">
+                    <input type="text" id="usernameInput" placeholder="Enter Username">
+                    <input type="text" id="roomInput" placeholder="Table Name" style="width: 140px;">
+                    <input type="number" id="betInput" placeholder="Bet" style="width: 80px;">
+                    <button onclick="sitAtTable()" class="btn-primary">Join Table</button>
+                    <h4 id="status" class="text-muted" style="margin-top: 15px; margin-bottom: 0;">Not sitting at a table...</h4>
+                </div>
+
+                <h2 class="text-green" style="font-size: 28px; margin: 10px 0 5px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
+
+                <!-- EMOJI REACTION BAR -->
+                <div class="reaction-bar" id="reactionBar">
+                    <button class="reaction-btn" onclick="fireReaction('🔥')">🔥</button>
+                    <button class="reaction-btn" onclick="fireReaction('💸')">💸</button>
+                    <button class="reaction-btn" onclick="fireReaction('💀')">💀</button>
+                    <button class="reaction-btn" onclick="fireReaction('🎯')">🎯</button>
+                </div>
+
+                <hr>
+
+                <div id="otherPlayers" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px; width: 100%;">
+                </div>
+                
+                <hr>
+
+                <h3 class="text-gold">THE DEALER</h3>
+                <p id="dealerMessages" class="text-muted" style="font-size: 16px; font-style: italic;">Waiting for bets...</p>
+                <div id="dealerCards" class="card-container"></div>
+                
+                <hr>
+
+                <h3 id="scoreDisplay">Your Score: 0</h3>
+                <div id="playerCards" class="card-container"></div>
+
+                <div id="actionButtons" style="display: none; margin-top: 15px;">
+                    <button onclick="hit()" class="btn-success">HIT</button>
+                    <button onclick="stand()" class="btn-danger">STAND</button>
+                </div>
+                <h2 id="gameStatus" style="font-size: 32px; margin-top: 20px;"></h2>
+            </div>
+        </div>
+
+        <!-- SIDEBAR AREA -->
+        <div class="sidebar-area">
+            <!-- LIVE CHAT -->
+            <div id="chatWidget" class="chat-widget">
+                <h4 style="color: var(--neon-green); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--neon-green); padding-bottom: 5px;">
+                    <span id="chatRoomName">VIP Table</span> Chat
+                </h4>
+                <div id="chatHistory" class="chat-history">
+                </div>
+                <div class="chat-input-group">
+                    <input type="text" id="chatInput" placeholder="Talk trash here...">
+                    <button onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- INSTRUCTIONS MODAL -->
+    <div id="instructionsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeInstructions()">×</span>
+            <h2 class="text-gold">Welcome to VIP Blackjack</h2>
+            <h4 class="text-green">How to Connect</h4>
+            <ul style="color: var(--text-muted); line-height: 1.6;">
+                <li><strong>Username:</strong> Pick a unique name. Your bank balance will save permanently!</li>
+                <li><strong>Table Name:</strong> Type a secret room name to play privately. Leave it blank for the Public table.</li>
+            </ul>
+            <h4 class="text-green">How to Play</h4>
+            <ul style="color: var(--text-muted); line-height: 1.6;">
+                <li>The goal is to get your score closer to <strong>21</strong> than the Dealer, without going over.</li>
+                <li><strong>HIT:</strong> Ask the dealer for another card.</li>
+                <li><strong>STAND:</strong> Lock in your score and end your turn.</li>
+                <li>If you go over 21, you <strong>BUST</strong> and lose your bet immediately.</li>
+            </ul>
+            <button onclick="closeInstructions()" class="btn-success" style="width: 100%; margin-top: 15px;">Got it, let's play!</button>
+        </div>
+    </div>
+
+    <!-- FLOOR MAP MODAL -->
+    <div id="floorMapModal" class="modal-overlay">
+        <div class="modal-content" style="border-color: #e67e22; max-width: 600px;">
+            <span class="close-btn" onclick="document.getElementById('floorMapModal').style.display='none'">×</span>
+            <h2 style="color: #e67e22; margin-top: 0;">🗺️ Casino Directory</h2>
+            <p class="text-muted">See where the action is happening right now.</p>
+            <div id="floorMapContainer" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; max-height: 400px; overflow-y: auto;">
+                <p style="color: #888;">Scanning casino floor...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentTable = "";
+
+        function openInstructions() { document.getElementById('instructionsModal').style.display = 'flex'; }
+        function closeInstructions() { document.getElementById('instructionsModal').style.display = 'none'; }
+
+        function createCardHTML(cardData) {
+            let symbol = "", colorClass = "";
+            if (cardData.suit === 'Hearts') { symbol = "♥"; colorClass = "red"; }
+            if (cardData.suit === 'Diamonds') { symbol = "♦"; colorClass = "red"; }
+            if (cardData.suit === 'Clubs') { symbol = "♣"; colorClass = "black"; }
+            if (cardData.suit === 'Spades') { symbol = "♠"; colorClass = "black"; }
+            return `<div class="card ${colorClass}" data-value="${cardData.value}">
+                        <div>${cardData.value}</div>
+                        <div style="font-size: 36px;">${symbol}</div>
+                    </div>`;
+        }
+
+        function sitAtTable() {
+            const username = document.getElementById('usernameInput').value;
+            const betAmount = document.getElementById('betInput').value;
+            const rawRoom = document.getElementById('roomInput').value;
+
+            if (!username || !betAmount) return alert("Enter a username and bet!");
+            currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "Public-1";
+
+            socket.emit('joinTable', { tableId: currentTable, username, betAmount });
+
+            document.getElementById('status').innerText = `Playing as ${username} at ${currentTable}`;
+            document.getElementById('chatRoomName').innerText = currentTable;
+            document.getElementById('gameStatus').innerText = "";
+            document.getElementById('dealerMessages').innerText = "Dealer waiting...";
+            document.getElementById('dealerCards').innerHTML = "";
+            document.getElementById('actionButtons').style.display = "none";
+            document.getElementById('reactionBar').style.display = "inline-block";
+        }
+
+        function hit() { socket.emit('hit', currentTable); }
+        function stand() { socket.emit('stand', currentTable); }
+
+        socket.on('updateBalance', (bal) => document.getElementById('balanceDisplay').innerText = bal);
+
+        socket.on('dealCards', (data) => {
+            let cardsHTML = "";
+            data.hand.forEach(c => cardsHTML += createCardHTML(c));
+            document.getElementById('playerCards').innerHTML = cardsHTML;
+            document.getElementById('scoreDisplay').innerText = `Your Score: ${data.score}`;
+            document.getElementById('actionButtons').style.display = "block";
+        });
+
+        socket.on('dealerPlayed', (data) => {
+            let cardsHTML = "";
+            data.hand.forEach(c => cardsHTML += createCardHTML(c));
+            document.getElementById('dealerCards').innerHTML = cardsHTML;
+            document.getElementById('dealerMessages').innerText = `Dealer Score: ${data.score}`;
+        });
+
+        socket.on('gameStatus', (msg) => {
+            const s = document.getElementById('gameStatus');
+            s.innerText = msg;
+            s.style.color = msg.includes("WIN") ? "var(--neon-green)" : (msg.includes("BUST") || msg.includes("lose")) ? "var(--neon-red)" : "#ffeaa7";
+            document.getElementById('actionButtons').style.display = "none";
+        });
+
+        socket.on('tableStateUpdate', (allPlayers) => {
+            const otherPlayersDiv = document.getElementById('otherPlayers');
+            const myUsername = document.getElementById('usernameInput').value;
+            let otherPlayersHTML = "";
+
+            allPlayers.forEach(player => {
+                if (player.username !== myUsername) {
+                    let miniCardsHTML = "";
+                    player.hand.forEach(c => {
+                        miniCardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`;
+                    });
+
+                    otherPlayersHTML += `
+                        <div class="glass-panel" style="padding: 15px; text-align: center;">
+                            <h4 class="text-gold" style="margin: 0 0 10px 0;"> ${player.username}</h4>
+                            <div style="display: flex; justify-content: center;">${miniCardsHTML}</div>
+                            <p class="text-muted" style="margin: 5px 0 10px 0; font-size: 14px;">Score: ${player.score}</p>
+                            <button class="btn-info" style="padding: 5px 10px; font-size: 12px;" onclick="sendTip('${player.username}')">Tip ₹100</button>
+                        </div>`;
+                }
+            });
+            otherPlayersDiv.innerHTML = otherPlayersHTML;
+        });
+
+        function sendTip(receiverUsername) {
+            const myUsername = document.getElementById('usernameInput').value;
+            if (confirm(`Send ₹100 tip to ${receiverUsername}?`)) {
+                socket.emit('tipPlayer', { tableId: currentTable, sender: myUsername, receiver: receiverUsername, amount: 100 });
+            }
+        }
+
+        function fireReaction(emoji) {
+            const myUsername = document.getElementById('usernameInput').value;
+            socket.emit('sendReaction', { tableId: currentTable, username: myUsername, emoji: emoji });
+        }
+
+        socket.on('triggerReaction', (data) => {
+            const table = document.getElementById('gameTable');
+            const emojiEl = document.createElement('div');
+            emojiEl.className = 'floating-emoji';
+            emojiEl.innerText = data.emoji;
+            emojiEl.style.position = 'absolute';
+            emojiEl.style.fontSize = '40px';
+            emojiEl.style.pointerEvents = 'none';
+            emojiEl.style.zIndex = '999';
+            emojiEl.style.textShadow = '0 2px 10px rgba(0,0,0,0.5)';
+            emojiEl.animate([
+                { transform: 'translateY(0) scale(0.5)', opacity: 0 },
+                { transform: 'translateY(-50px) scale(1.2)', opacity: 1, offset: 0.2 },
+                { transform: 'translateY(-200px) scale(1)', opacity: 0 }
+            ], { duration: 2500, easing: 'ease-out', fill: 'forwards' });
+
+            const randomLeft = Math.floor(Math.random() * 80) + 10;
+            emojiEl.style.left = `${randomLeft}%`;
+            emojiEl.style.bottom = '100px';
+
+            table.appendChild(emojiEl);
+            setTimeout(() => { emojiEl.remove(); }, 2500);
+        });
+
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const username = document.getElementById('usernameInput').value || "Anon";
+            if (input.value.trim() !== "" && currentTable !== "") {
+                socket.emit('sendChat', { tableId: currentTable, username, message: input.value });
+                input.value = "";
+            }
+        }
+        document.getElementById("chatInput").addEventListener("keypress", e => { if (e.key === "Enter") sendChat(); });
+
+        socket.on('receiveChat', (data) => {
+            const hist = document.getElementById('chatHistory');
+            let color = data.username === "SYSTEM" ? "var(--neon-red)" : "var(--neon-gold)";
+            hist.innerHTML += `<div><strong style="color: ${color};">${data.username}:</strong> ${data.message}</div>`;
+            hist.scrollTop = hist.scrollHeight;
+        });
+
+        socket.on('liveFloorMap', (tables) => {
+            const container = document.getElementById('floorMapContainer');
+            if (tables.length === 0) {
+                container.innerHTML = `<p style="color: #888;">The casino floor is empty.</p>`;
+                return;
+            }
+            let html = "";
+            tables.forEach(table => {
+                let color = table.game === 'blackjack' ? 'var(--neon-green)' : table.game === 'roulette' ? 'var(--neon-purple)' : 'var(--neon-blue)';
+                let playerList = table.players.join(", ");
+                html += `
+                <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: ${color}; font-size: 16px;">${table.id}</strong>
+                        <div style="color: #ccc; font-size: 13px; margin-top: 4px;"> ${playerList}</div>
+                    </div>
+                    <div style="color: #888; font-size: 12px; text-transform: uppercase;">${table.game}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        });
+    </script>
+</body>
+</html>

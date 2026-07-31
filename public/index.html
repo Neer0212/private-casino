@@ -1,543 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private VIP Casino</title>
+    <title>VIP Casino | Elite Gaming Experience</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #111;
-            color: white;
-            text-align: center;
+        .hero {
+            padding: 80px 20px;
+            margin-bottom: 40px;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #f1c40f, 0 0 20px #f1c40f, 0 0 30px #e67e22; }
+            to { text-shadow: 0 0 20px #f1c40f, 0 0 30px #f39c12, 0 0 40px #e67e22; }
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            margin: 0;
-            overflow-x: hidden;
         }
 
-        .table {
-            background: radial-gradient(circle, #2E8B57 0%, #1a5c36 100%);
+        .game-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             padding: 30px;
-            border-radius: 150px;
-            width: 75%;
-            max-width: 900px;
-            margin: auto;
-            border: 15px solid #4a3018;
-            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.8);
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
             position: relative;
-        }
-
-        button {
-            padding: 10px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-            border-radius: 5px;
-            border: none;
-            background-color: #f1c40f;
-            color: #111;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            background-color: #f39c12;
-            transform: scale(1.05);
-        }
-
-        input {
-            padding: 10px;
-            font-size: 16px;
-            margin: 5px;
-            border-radius: 5px;
-            border: none;
-        }
-
-        .card-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 15px 0;
-            min-height: 120px;
-        }
-
-        .card {
-            width: 80px;
-            height: 115px;
-            background-color: white;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            font-weight: bold;
-            position: relative;
-            background-image: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);
-        }
-
-        .red {
-            color: #d63031;
-        }
-
-        .black {
-            color: #2d3436;
-        }
-
-        .card::before {
-            content: attr(data-value);
-            position: absolute;
-            top: 5px;
-            left: 8px;
-            font-size: 16px;
-        }
-
-        .chat-widget {
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #55efc4;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: left;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 320px;
-        }
-
-        /* --- INSTRUCTIONS MODAL CSS --- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 999;
-            justify-content: center;
             align-items: center;
         }
 
-        .modal-content {
-            background: #222;
-            border: 2px solid #f1c40f;
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            text-align: left;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
-            position: relative;
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
         }
 
-        .modal-content h2 {
-            color: #f1c40f;
-            margin-top: 0;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
-        }
-
-        .modal-content h4 {
-            color: #55efc4;
-            margin-bottom: 5px;
-        }
-
-        .modal-content p,
-        .modal-content li {
-            color: #ccc;
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 24px;
-            color: #fff;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .close-btn:hover {
-            color: #ff7675;
-        }
-
-        /* --- SOCIAL FEATURES CSS --- */
-        .reaction-bar {
-            display: none;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 15px;
-            border-radius: 20px;
-            display: inline-block;
+        .game-icon {
+            font-size: 60px;
             margin-bottom: 15px;
         }
 
-        .reaction-btn {
-            background: transparent;
-            border: none;
+        .game-card h2 {
             font-size: 24px;
-            padding: 5px;
-            margin: 0 5px;
-            cursor: pointer;
-            transition: 0.2s;
+            margin-bottom: 10px;
         }
 
-        .reaction-btn:hover {
-            transform: scale(1.3) translateY(-5px);
+        .game-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
         }
 
-        .tip-btn {
-            background-color: #3498db;
-            color: white;
-            padding: 5px 10px;
-            font-size: 12px;
-            margin-top: 10px;
-            border-radius: 3px;
+        .game-card.blackjack { border-bottom: 4px solid var(--neon-gold); }
+        .game-card.blackjack:hover { box-shadow: 0 15px 40px rgba(241, 196, 15, 0.2); }
+        .game-card.blackjack h2 { color: var(--neon-gold); }
+
+        .game-card.poker { border-bottom: 4px solid var(--neon-blue); }
+        .game-card.poker:hover { box-shadow: 0 15px 40px rgba(52, 152, 219, 0.2); }
+        .game-card.poker h2 { color: var(--neon-blue); }
+
+        .game-card.teenpatti { border-bottom: 4px solid #ff9f43; }
+        .game-card.teenpatti:hover { box-shadow: 0 15px 40px rgba(255, 159, 67, 0.2); }
+        .game-card.teenpatti h2 { color: #ff9f43; }
+
+        .game-card.roulette { border-bottom: 4px solid var(--neon-purple); }
+        .game-card.roulette:hover { box-shadow: 0 15px 40px rgba(155, 89, 182, 0.2); }
+        .game-card.roulette h2 { color: var(--neon-purple); }
+
+        .game-card.bluff { border-bottom: 4px solid var(--neon-red); }
+        .game-card.bluff:hover { box-shadow: 0 15px 40px rgba(255, 118, 117, 0.2); }
+        .game-card.bluff h2 { color: var(--neon-red); }
+
+        .play-btn {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: background 0.3s;
         }
 
-        .tip-btn:hover {
-            background-color: #2980b9;
-        }
-
-        .floating-emoji {
-            position: absolute;
-            font-size: 40px;
-            pointer-events: none;
-            z-index: 999;
-            animation: floatUp 2.5s ease-out forwards;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        @keyframes floatUp {
-            0% {
-                transform: translateY(0) scale(0.5);
-                opacity: 0;
-            }
-
-            20% {
-                transform: translateY(-50px) scale(1.2);
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateY(-200px) scale(1);
-                opacity: 0;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .chat-widget {
-                position: relative;
-                bottom: auto;
-                right: auto;
-                width: 90%;
-                margin: 20px auto;
-                box-sizing: border-box;
-            }
-
-            .table {
-                border-width: 5px;
-                padding: 15px;
-                border-radius: 50px;
-                width: 95%;
-            }
+        .game-card:hover .play-btn {
+            background: rgba(255,255,255,0.25);
         }
     </style>
 </head>
-
 <body>
-
-    <h1 style="color: #f1c40f; letter-spacing: 2px;"> VIP BLACKJACK </h1>
-
-    <!-- TOP NAVIGATION LINKS -->
-    <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <button onclick="openInstructions()"
-            style="background-color: transparent; border: 1px solid #3498db; color: #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px;">
-            How to Play</button>
-        <button onclick="document.getElementById('floorMapModal').style.display='flex'"
-            style="background-color: transparent; border: 1px solid #e67e22; color: #e67e22; padding: 5px 15px; border-radius: 20px; font-size: 14px;">
-            Who is Online?</button>
-        <a href="/poker.html"
-            style="color: #3498db; text-decoration: none; font-weight: bold; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">
-            Play Poker</a>
-        <a href="/roulette.html"
-            style="color: #9b59b6; text-decoration: none; font-weight: bold; border: 1px solid #9b59b6; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">
-            Play Roulette</a>
-        <a href="/leaderboard.html"
-            style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">
-            Global Leaderboard</a>
-        <a href="/bluff.html"
-            style="color: #55efc4; text-decoration: none; font-weight: bold; border: 1px solid #55efc4; padding: 5px 15px; border-radius: 20px; font-size: 14px; display: flex; align-items: center;">
-            Bluff</a>
+    <div class="nav-links" style="justify-content: flex-end; margin-top: 10px; margin-right: 20px;">
+        <a href="/leaderboard.html" class="nav-leaderboard">🏆 Global Leaderboard</a>
+        <a href="/dashboard.html" class="nav-poker">👤 Profile</a>
     </div>
 
-    <div class="table" id="gameTable">
-        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: inline-block;">
-            <input type="text" id="usernameInput" placeholder="Enter Username">
-            <input type="text" id="roomInput" placeholder="Table Name" style="width: 140px;">
-            <input type="number" id="betInput" placeholder="Bet" style="width: 80px;">
-            <button onclick="sitAtTable()">Join Table</button>
-            <h2 id="status" style="font-size: 16px; color: #ccc; margin-top: 10px; margin-bottom: 0;">Not sitting at a
-                table...</h2>
-        </div>
-
-        <h2 style="color: #55efc4; font-size: 28px; margin: 10px 0 5px 0;">Bank: ₹<span id="balanceDisplay">0</span>
-        </h2>
-
-        <!-- EMOJI REACTION BAR -->
-        <div class="reaction-bar" id="reactionBar" style="display: none;">
-            <button class="reaction-btn" onclick="fireReaction('🔥')">🔥</button>
-            <button class="reaction-btn" onclick="fireReaction('💸')">💸</button>
-            <button class="reaction-btn" onclick="fireReaction('💀')">💀</button>
-            <button class="reaction-btn" onclick="fireReaction('🎯')">🎯</button>
-        </div>
-
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
-
-        <div id="otherPlayers"
-            style="display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0; min-height: 100px;">
-        </div>
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
-
-        <h3 style="color: #ffcc00; letter-spacing: 1px;">THE DEALER</h3>
-        <p id="dealerMessages" style="font-size: 16px; font-style: italic; color: #ccc;">Waiting for bets...</p>
-        <div id="dealerCards" class="card-container"></div>
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
-
-        <h3 id="scoreDisplay" style="letter-spacing: 1px;">Your Score: 0</h3>
-        <div id="playerCards" class="card-container"></div>
-
-        <div id="actionButtons" style="display: none; margin-top: 15px;">
-            <button onclick="hit()" style="background-color: #2ecc71; color: white;">HIT</button>
-            <button onclick="stand()" style="background-color: #e74c3c; color: white;">STAND</button>
-        </div>
-        <h2 id="gameStatus" style="font-size: 32px; text-shadow: 2px 2px 4px #000; margin-top: 20px;"></h2>
+    <div class="hero">
+        <h1>VIP Casino</h1>
+        <p>Experience the thrill of elite, high-stakes gaming in our private digital casino. Choose your table and take your seat.</p>
     </div>
 
-    <!-- LIVE CHAT -->
-    <div id="chatWidget" class="chat-widget">
-        <h4
-            style="color: #55efc4; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #55efc4; padding-bottom: 5px;">
-            <span id="chatRoomName">VIP Table</span> Chat
-        </h4>
-        <div id="chatHistory"
-            style="height: 180px; overflow-y: auto; color: white; font-size: 14px; margin-bottom: 10px; font-family: monospace; display: flex; flex-direction: column; gap: 5px;">
-        </div>
-        <div style="display: flex; gap: 5px;">
-            <input type="text" id="chatInput" placeholder="Talk trash here..."
-                style="width: 75%; padding: 8px; margin: 0; font-size: 14px; background: #222; color: white;">
-            <button onclick="sendChat()"
-                style="width: 25%; padding: 8px; margin: 0; font-size: 14px; background-color: #55efc4; color: black;">Send</button>
-        </div>
+    <div class="game-grid">
+        <a href="/blackjack.html" class="game-card blackjack">
+            <div class="game-icon">♠️</div>
+            <h2>VIP Blackjack</h2>
+            <p>Beat the dealer to 21. The classic high-roller experience.</p>
+            <div class="play-btn">Play Now</div>
+        </a>
+
+        <a href="/teenpatti.html" class="game-card teenpatti">
+            <div class="game-icon">🎴</div>
+            <h2>Teen Patti</h2>
+            <p>The ultimate 3-card Indian Poker showdown. Play Blind or Seen.</p>
+            <div class="play-btn">Play Now</div>
+        </a>
+
+        <a href="/poker.html" class="game-card poker">
+            <div class="game-icon">🤠</div>
+            <h2>Texas Hold'em</h2>
+            <p>Read your opponents, master the flop, and take the pot.</p>
+            <div class="play-btn">Play Now</div>
+        </a>
+
+        <a href="/roulette.html" class="game-card roulette">
+            <div class="game-icon">🎡</div>
+            <h2>Royal Roulette</h2>
+            <p>Place your bets and watch the wheel spin for massive payouts.</p>
+            <div class="play-btn">Play Now</div>
+        </a>
+
+        <a href="/bluff.html" class="game-card bluff">
+            <div class="game-icon">🤥</div>
+            <h2>Bluff (Cheat)</h2>
+            <p>Lie your way to victory. Get rid of your cards by any means necessary.</p>
+            <div class="play-btn">Play Now</div>
+        </a>
     </div>
-
-    <!--  RESTORED INSTRUCTIONS MODAL -->
-    <div id="instructionsModal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeInstructions()">×</span>
-            <h2>Welcome to VIP Blackjack</h2>
-            <h4>How to Connect</h4>
-            <ul>
-                <li><strong>Username:</strong> Pick a unique name. Your bank balance will save permanently!</li>
-                <li><strong>Table Name:</strong> Type a secret room name to play privately. Leave it blank for the
-                    Public table.</li>
-            </ul>
-            <h4>How to Play</h4>
-            <ul>
-                <li>The goal is to get your score closer to <strong>21</strong> than the Dealer, without going over.
-                </li>
-                <li><strong>HIT:</strong> Ask the dealer for another card.</li>
-                <li><strong>STAND:</strong> Lock in your score and end your turn.</li>
-                <li>If you go over 21, you <strong>BUST</strong> and lose your bet immediately.</li>
-            </ul>
-            <button onclick="closeInstructions()" style="width: 100%; margin-top: 15px; background: #55efc4;">Got it,
-                let's play!</button>
-        </div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let currentTable = "";
-
-        // Restored Modal Functions
-        function openInstructions() { document.getElementById('instructionsModal').style.display = 'flex'; }
-        function closeInstructions() { document.getElementById('instructionsModal').style.display = 'none'; }
-
-        function createCardHTML(cardData) {
-            let symbol = "", colorClass = "";
-            if (cardData.suit === 'Hearts') { symbol = "♥"; colorClass = "red"; }
-            if (cardData.suit === 'Diamonds') { symbol = "♦"; colorClass = "red"; }
-            if (cardData.suit === 'Clubs') { symbol = "♣"; colorClass = "black"; }
-            if (cardData.suit === 'Spades') { symbol = "♠"; colorClass = "black"; }
-            return `<div class="card ${colorClass}" data-value="${cardData.value}">
-                        <div>${cardData.value}</div>
-                        <div style="font-size: 36px;">${symbol}</div>
-                    </div>`;
-        }
-
-        function sitAtTable() {
-            const username = document.getElementById('usernameInput').value;
-            const betAmount = document.getElementById('betInput').value;
-            const rawRoom = document.getElementById('roomInput').value;
-
-            if (!username || !betAmount) return alert("Enter a username and bet!");
-            currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "Public-1";
-
-            socket.emit('joinTable', { tableId: currentTable, username, betAmount });
-
-            document.getElementById('status').innerText = `Playing as ${username} at ${currentTable}`;
-            document.getElementById('chatRoomName').innerText = currentTable;
-            document.getElementById('gameStatus').innerText = "";
-            document.getElementById('dealerMessages').innerText = "Dealer waiting...";
-            document.getElementById('dealerCards').innerHTML = "";
-            document.getElementById('actionButtons').style.display = "none";
-            document.getElementById('reactionBar').style.display = "inline-block";
-        }
-
-        function hit() { socket.emit('hit', currentTable); }
-        function stand() { socket.emit('stand', currentTable); }
-
-        socket.on('updateBalance', (bal) => document.getElementById('balanceDisplay').innerText = bal);
-
-        socket.on('dealCards', (data) => {
-            let cardsHTML = "";
-            data.hand.forEach(c => cardsHTML += createCardHTML(c));
-            document.getElementById('playerCards').innerHTML = cardsHTML;
-            document.getElementById('scoreDisplay').innerText = `Your Score: ${data.score}`;
-            document.getElementById('actionButtons').style.display = "block";
-        });
-
-        socket.on('dealerPlayed', (data) => {
-            let cardsHTML = "";
-            data.hand.forEach(c => cardsHTML += createCardHTML(c));
-            document.getElementById('dealerCards').innerHTML = cardsHTML;
-            document.getElementById('dealerMessages').innerText = `Dealer Score: ${data.score}`;
-        });
-
-        socket.on('gameStatus', (msg) => {
-            const s = document.getElementById('gameStatus');
-            s.innerText = msg;
-            s.style.color = msg.includes("WIN") ? "#55efc4" : (msg.includes("BUST") || msg.includes("lose")) ? "#ff7675" : "#ffeaa7";
-            document.getElementById('actionButtons').style.display = "none";
-        });
-
-        socket.on('tableStateUpdate', (allPlayers) => {
-            const otherPlayersDiv = document.getElementById('otherPlayers');
-            const myUsername = document.getElementById('usernameInput').value;
-            let otherPlayersHTML = "";
-
-            allPlayers.forEach(player => {
-                if (player.username !== myUsername) {
-                    let miniCardsHTML = "";
-                    player.hand.forEach(c => {
-                        miniCardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`;
-                    });
-
-                    otherPlayersHTML += `
-                        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid #55efc4;">
-                            <h4 style="color: #f1c40f; margin: 0 0 10px 0;"> ${player.username}</h4>
-                            <div style="display: flex; justify-content: center;">${miniCardsHTML}</div>
-                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #ccc;">Score: ${player.score}</p>
-                            <button class="tip-btn" onclick="sendTip('${player.username}')">Tip ₹100</button>
-                        </div>`;
-                }
-            });
-            otherPlayersDiv.innerHTML = otherPlayersHTML;
-        });
-
-        function sendTip(receiverUsername) {
-            const myUsername = document.getElementById('usernameInput').value;
-            if (confirm(`Send ₹100 tip to ${receiverUsername}?`)) {
-                socket.emit('tipPlayer', { tableId: currentTable, sender: myUsername, receiver: receiverUsername, amount: 100 });
-            }
-        }
-
-        function fireReaction(emoji) {
-            const myUsername = document.getElementById('usernameInput').value;
-            socket.emit('sendReaction', { tableId: currentTable, username: myUsername, emoji: emoji });
-        }
-
-        socket.on('triggerReaction', (data) => {
-            const table = document.getElementById('gameTable');
-            const emojiEl = document.createElement('div');
-            emojiEl.className = 'floating-emoji';
-            emojiEl.innerText = data.emoji;
-
-            const randomLeft = Math.floor(Math.random() * 80) + 10;
-            emojiEl.style.left = `${randomLeft}%`;
-            emojiEl.style.bottom = '100px';
-
-            table.appendChild(emojiEl);
-            setTimeout(() => { emojiEl.remove(); }, 2500);
-        });
-
-        function sendChat() {
-            const input = document.getElementById('chatInput');
-            const username = document.getElementById('usernameInput').value || "Anon";
-            if (input.value.trim() !== "" && currentTable !== "") {
-                socket.emit('sendChat', { tableId: currentTable, username, message: input.value });
-                input.value = "";
-            }
-        }
-        document.getElementById("chatInput").addEventListener("keypress", e => { if (e.key === "Enter") sendChat(); });
-
-        socket.on('receiveChat', (data) => {
-            const hist = document.getElementById('chatHistory');
-            let color = data.username === "SYSTEM" ? "#ff7675" : "#f1c40f";
-            hist.innerHTML += `<div><strong style="color: ${color};">${data.username}:</strong> ${data.message}</div>`;
-            hist.scrollTop = hist.scrollHeight;
-        });
-    </script>
-
-    <div id="floorMapModal" class="modal-overlay" style="z-index: 1000;">
-        <div class="modal-content" style="border-color: #e67e22; max-width: 600px;">
-            <span class="close-btn" onclick="document.getElementById('floorMapModal').style.display='none'">×</span>
-            <h2 style="color: #e67e22; margin-top: 0;">🗺️ Casino Directory</h2>
-            <p style="color: #ccc; font-size: 14px;">See where the action is happening right now.</p>
-
-            <div id="floorMapContainer"
-                style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; max-height: 400px; overflow-y: auto;">
-                <p style="color: #888;">Scanning casino floor...</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Listen for the telemetry broadcast
-        socket.on('liveFloorMap', (tables) => {
-            const container = document.getElementById('floorMapContainer');
-            if (tables.length === 0) {
-                container.innerHTML = `<p style="color: #888;">The casino floor is empty.</p>`;
-                return;
-            }
-
-            let html = "";
-            tables.forEach(table => {
-                // Pick an icon based on the game
-                let icon = table.game === 'blackjack' ? '' : table.game === 'roulette' ? '' : '';
-                let color = table.game === 'blackjack' ? '#55efc4' : table.game === 'roulette' ? '#9b59b6' : '#3498db';
-
-                let playerList = table.players.join(", ");
-
-                html += `
-            <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="color: ${color}; font-size: 16px;">${icon} ${table.id}</strong>
-                    <div style="color: #ccc; font-size: 13px; margin-top: 4px;"> ${playerList}</div>
-                </div>
-                <div style="color: #888; font-size: 12px; text-transform: uppercase;">${table.game}</div>
-            </div>`;
-            });
-            container.innerHTML = html;
-        });
-    </script>
 </body>
-
 </html>

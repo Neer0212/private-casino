@@ -34,7 +34,8 @@ app.get('/api/admin/stats', async (req, res) => {
             blackjackPlayers: activePlayers.filter(p => p.game === 'blackjack').length, 
             roulettePlayers: activePlayers.filter(p => p.game === 'roulette').length,
             pokerPlayers: activePlayers.filter(p => p.game === 'poker').length,
-            bluffPlayers: activePlayers.filter(p => p.game === 'bluff').length
+            bluffPlayers: activePlayers.filter(p => p.game === 'bluff').length,
+            teenpattiPlayers: activePlayers.filter(p => p.game === 'teenpatti').length
         });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -61,6 +62,7 @@ let activePlayers = [];
 let tableStates = {}; // For Blackjack
 let pokerRooms = {};  // For Texas Hold'em
 let bluffRooms = {};  // For Bluff (Cheat)
+let teenPattiRooms = {}; // For Teen Patti
 
 // ==========================================
 // 🗺️ CASINO FLOOR TELEMETRY (LIVE MAP)
@@ -242,6 +244,62 @@ function broadcastBluffState(tableId) {
         isLie: table.isLie || false,
         bluffResultText: table.bluffResultText || ""
     });
+}
+
+// ==========================================
+// 🎴 TEEN PATTI ENGINE
+// ==========================================
+function evaluateTeenPatti(cards) {
+    const ranks = { '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14 };
+    let c = cards.map(card => ({ suit: card.suit, rank: ranks[card.value], value: card.value }));
+    c.sort((a,b) => b.rank - a.rank); 
+    let isFlush = c[0].suit === c[1].suit && c[1].suit === c[2].suit;
+    let isStraight = false, straightRank = 0;
+    if (c[0].rank === c[1].rank + 1 && c[1].rank === c[2].rank + 1) { isStraight = true; straightRank = c[0].rank; }
+    else if (c[0].rank === 14 && c[1].rank === 3 && c[2].rank === 2) { isStraight = true; straightRank = 13.5; }
+    let isTrail = c[0].rank === c[1].rank && c[1].rank === c[2].rank;
+    let isPair = c[0].rank === c[1].rank || c[1].rank === c[2].rank;
+    let pairRank = 0, kicker = 0;
+    if (isPair && !isTrail) {
+        if (c[0].rank === c[1].rank) { pairRank = c[0].rank; kicker = c[2].rank; }
+        else { pairRank = c[1].rank; kicker = c[0].rank; }
+    }
+    let score = 0, desc = "";
+    if (isTrail) { score = 6000000 + c[0].rank * 10000; desc = `Trail of ${c[0].value}s`; }
+    else if (isStraight && isFlush) { score = 5000000 + straightRank * 10000; desc = `Pure Sequence`; }
+    else if (isStraight) { score = 4000000 + straightRank * 10000; desc = `Sequence`; }
+    else if (isFlush) { score = 3000000 + c[0].rank * 10000 + c[1].rank * 100 + c[2].rank; desc = `Color (${c[0].value} High)`; }
+    else if (isPair) { score = 2000000 + pairRank * 10000 + kicker; desc = `Pair of ${c[1].value}s`; }
+    else { score = 1000000 + c[0].rank * 10000 + c[1].rank * 100 + c[2].rank; desc = `High Card ${c[0].value}`; }
+    return { score, desc };
+}
+
+function broadcastTeenPattiState(tableId) {
+    let table = teenPattiRooms[tableId];
+    if (!table) return;
+    let players = activePlayers.filter(p => p.tableId === tableId && p.game === 'teenpatti');
+    let currentTurnUser = "";
+    if (players.length > 0 && table.stage === 'playing') {
+        let activeOnly = players.filter(p => p.status === 'playing');
+        if (activeOnly.length > 0) currentTurnUser = activeOnly[table.turnIndex % activeOnly.length].username;
+    }
+    let safePlayers = players.map(p => ({
+        username: p.username,
+        status: p.status,
+        handDesc: p.handDesc,
+        currentBet: p.currentBet,
+        isTurn: p.username === currentTurnUser,
+        cards: (table.stage === 'showdown' || p.status === 'winner') ? p.hand : (p.status === 'playing' ? [{value:'?',suit:'?'},{value:'?',suit:'?'},{value:'?',suit:'?'}] : [])
+    }));
+    io.to(tableId).emit('teenPattiStateUpdate', {
+        stage: table.stage, pot: table.pot, highestBet: table.highestBet, players: safePlayers
+    });
+}
+
+function nextTpTurn(tableId) {
+    let table = teenPattiRooms[tableId];
+    let players = activePlayers.filter(p => p.tableId === tableId && p.game === 'teenpatti' && p.status === 'playing');
+    if (players.length > 1) table.turnIndex = (table.turnIndex + 1) % players.length;
 }
 
 // ==========================================
@@ -626,6 +684,136 @@ io.on('connection', (socket) => {
         }
     });
 
+    // --- 🎴 TEEN PATTI LISTENERS ---
+    socket.on('joinTeenPatti', async (data) => {
+        const tableId = (data.tableId && data.tableId.trim() !== "") ? data.tableId.trim() : "TeenPatti-1";
+        socket.join(tableId);
+        if (!teenPattiRooms[tableId]) teenPattiRooms[tableId] = { deck: createDeck(), stage: 'waiting', pot: 0, highestBet: 0, turnIndex: 0 };
+        try {
+            let balance = await getUserBalance(data.username);
+            socket.emit('updateBalance', balance);
+            const player = { socketId: socket.id, username: data.username, tableId, hand: [], status: 'waiting', game: 'teenpatti', handDesc: '', currentBet: 0, tpScore: 0 };
+            activePlayers = activePlayers.filter(p => p.socketId !== socket.id);
+            activePlayers.push(player);
+            broadcastTeenPattiState(tableId);
+            io.emit('triggerChartUpdate');
+        } catch (err) {}
+    });
+
+    socket.on('devStartTeenPatti', async (tableId) => {
+        let table = teenPattiRooms[tableId];
+        let players = activePlayers.filter(p => p.tableId === tableId && p.game === 'teenpatti');
+        if (!table || players.length < 2) {
+            io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `❌ Need at least 2 players to start.` });
+            return;
+        }
+        if (table.stage === 'waiting' || table.stage === 'showdown') {
+            table.deck = createDeck(); table.pot = 0; table.highestBet = 0; table.turnIndex = 0; table.stage = 'playing';
+            for (let p of players) {
+                try {
+                    let bal = await getUserBalance(p.username);
+                    if (bal >= 100) {
+                        await updateBalance(p.username, bal - 100);
+                        p.hand = [table.deck.pop(), table.deck.pop(), table.deck.pop()];
+                        let evalData = evaluateTeenPatti(p.hand);
+                        p.tpScore = evalData.score; p.handDesc = evalData.desc;
+                        p.status = 'playing'; p.currentBet = 100; table.pot += 100;
+                        io.to(p.socketId).emit('receiveTeenPattiCards', p.hand);
+                    } else { p.status = 'waiting'; }
+                } catch(err){}
+            }
+            table.highestBet = 100;
+            io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🃏 New Hand! ₹100 Ante collected. 3 cards dealt.` });
+            broadcastTeenPattiState(tableId);
+        }
+    });
+
+    socket.on('teenPattiAction', async (data) => {
+        const { tableId, action, amount } = data;
+        let table = teenPattiRooms[tableId];
+        let player = activePlayers.find(p => p.socketId === socket.id && p.game === 'teenpatti');
+        if (!table || !player || player.status !== 'playing') return;
+
+        try {
+            let balance = await getUserBalance(player.username);
+            let cost = 0;
+
+            if (action === 'fold') {
+                player.status = 'folded';
+                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🛑 ${player.username} packed (folded).` });
+            } 
+            else if (action === 'call') {
+                cost = table.highestBet - player.currentBet;
+                if (balance >= cost) {
+                    await updateBalance(player.username, balance - cost);
+                    player.currentBet += cost;
+                    table.pot += cost;
+                    io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `✅ ${player.username} called (₹${cost}).` });
+                }
+            } 
+            else if (action === 'raise') {
+                let raiseTo = parseInt(amount);
+                if (raiseTo > table.highestBet) {
+                    cost = raiseTo - player.currentBet;
+                    if (balance >= cost) {
+                        await updateBalance(player.username, balance - cost);
+                        player.currentBet += cost;
+                        table.highestBet = raiseTo;
+                        table.pot += cost;
+                        io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🔥 ${player.username} raised to ₹${raiseTo}!` });
+                    }
+                }
+            }
+            else if (action === 'show') {
+                cost = table.highestBet - player.currentBet; 
+                if (balance >= cost) {
+                    await updateBalance(player.username, balance - cost);
+                    player.currentBet += cost;
+                    table.pot += cost;
+                    io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🔍 ${player.username} paid ₹${cost} to SHOW!` });
+                    
+                    table.stage = 'showdown';
+                    let activePlay = activePlayers.filter(p => p.tableId === tableId && p.game === 'teenpatti' && p.status === 'playing');
+                    
+                    let bestScore = -1;
+                    let winners = [];
+                    activePlay.forEach(p => {
+                        if (p.tpScore > bestScore) { bestScore = p.tpScore; winners = [p]; }
+                        else if (p.tpScore === bestScore) { winners.push(p); }
+                    });
+
+                    if (winners.length > 0) {
+                        let splitPot = Math.floor(table.pot / winners.length);
+                        winners.forEach(async w => {
+                            w.status = 'winner';
+                            io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🏆 ${w.username} wins ₹${splitPot} with ${w.handDesc}!` });
+                            try {
+                                let bal = await getUserBalance(w.username);
+                                await updateBalance(w.username, bal + splitPot);
+                            } catch(err){}
+                        });
+                    }
+                }
+            }
+
+            let activePlay = activePlayers.filter(p => p.tableId === tableId && p.game === 'teenpatti' && p.status === 'playing');
+            if (activePlay.length === 1 && table.stage !== 'showdown') {
+                table.stage = 'showdown';
+                let w = activePlay[0];
+                w.status = 'winner';
+                io.to(tableId).emit('receiveChat', { username: "SYSTEM", message: `🏆 Everyone else packed! ${w.username} wins ₹${table.pot}!` });
+                try {
+                    let bal = await getUserBalance(w.username);
+                    await updateBalance(w.username, bal + table.pot);
+                } catch(err){}
+            } else if (table.stage !== 'showdown' && action !== 'show') {
+                nextTpTurn(tableId);
+            }
+            
+            broadcastTeenPattiState(tableId);
+        } catch (err) { console.error("TP Action Error:", err); }
+    });
+
     // --- 💬 SOCIAL FEATURES ---
     socket.on('tipPlayer', async (data) => {
         const { tableId, sender, receiver, amount } = data;
@@ -653,6 +841,7 @@ io.on('connection', (socket) => {
             else if (player.game === 'roulette') broadcastRouletteState(tableId);
             else if (player.game === 'poker') broadcastPokerState(tableId);
             else if (player.game === 'bluff') broadcastBluffState(tableId);
+            else if (player.game === 'teenpatti') broadcastTeenPattiState(tableId);
             io.emit('triggerChartUpdate');
         }
     });

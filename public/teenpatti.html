@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIP Texas Hold'em</title>
+    <title>VIP Teen Patti</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         .table {
-            background: radial-gradient(ellipse, #1e3c72 0%, #0d2146 100%);
+            background: radial-gradient(ellipse, #1e3c72 0%, #0a1128 100%);
             border-color: #050a14;
         }
         .pot-display {
@@ -28,11 +28,11 @@
 </head>
 <body>
 
-    <h1 class="text-blue">Texas Hold'em Poker</h1>
+    <h1 class="text-gold">VIP Teen Patti (Indian Poker)</h1>
 
     <div class="nav-links">
         <a href="/" class="nav-leaderboard">🏠 Casino Lobby</a>
-        <button onclick="openInstructions()" class="nav-poker">📖 How to Play</button>
+        <button onclick="openInstructions()" class="btn-info">📖 How to Play</button>
         <button onclick="document.getElementById('floorMapModal').style.display='flex'" class="nav-blackjack">🗺️ Who is Online?</button>
     </div>
 
@@ -43,11 +43,11 @@
                 <div class="glass-panel" style="margin-bottom: 20px; width: 90%; max-width: 450px;">
                     <input type="text" id="usernameInput" placeholder="Enter Username">
                     <input type="text" id="roomInput" placeholder="Room (e.g. HighRoller)">
-                    <button onclick="joinPoker()" class="btn-primary" style="width: 90%;">Take a Seat</button>
+                    <button onclick="joinTeenPatti()" class="btn-primary" style="width: 90%;">Take a Seat</button>
                     <h4 id="status" class="text-muted" style="margin-top: 15px; margin-bottom: 0;">Standing at the edge of the room...</h4>
                 </div>
 
-                <h2 class="text-blue" style="font-size: 24px; margin: 15px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
+                <h2 class="text-green" style="font-size: 24px; margin: 15px 0;">Bank: ₹<span id="balanceDisplay">0</span></h2>
 
                 <div class="reaction-bar" id="reactionBar">
                     <button class="reaction-btn" onclick="fireReaction('🔥')">🔥</button>
@@ -56,31 +56,30 @@
                     <button class="reaction-btn" onclick="fireReaction('🎯')">🎯</button>
                 </div>
 
-                <div id="pokerBoard" style="display: none; margin-top: 20px; width: 100%;">
+                <div id="tpBoard" style="display: none; margin-top: 20px; width: 100%;">
                     <p class="text-blue" id="stageDisplay" style="font-size: 18px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">Stage: WAITING</p>
-                    <div class="pot-display">Main Pot: ₹<span id="mainPot">0</span></div><br>
+                    <div class="pot-display">Pot: ₹<span id="mainPot">0</span></div><br>
 
-                    <button onclick="devAdvanceStage()" class="btn-info" style="margin-top: 15px;">🛠️ Dealer: Advance Stage</button>
-
-                    <h3 class="text-muted" style="margin-top: 20px;">Community Cards</h3>
-                    <div id="communityCards" class="card-container"></div>
+                    <button onclick="devStartTeenPatti()" class="btn-info" style="margin-top: 15px;">🛠️ Dealer: Deal Cards</button>
 
                     <hr>
 
-                    <h3 class="text-muted">Your Hole Cards</h3>
+                    <h3 class="text-muted">Your Cards</h3>
                     <div id="myCards" class="card-container"></div>
+                    <p id="myHandDesc" class="text-gold" style="font-weight: bold; font-size: 18px; margin-top: 10px;"></p>
 
-                    <div id="pokerActions" class="glass-panel" style="margin-top: 20px; display: inline-block;">
+                    <div id="tpActions" class="glass-panel" style="margin-top: 20px; display: inline-block;">
                         <h4 id="turnIndicator" class="text-red" style="margin-top: 0;">Waiting for your turn...</h4>
-                        <p class="text-muted">Highest Bet: ₹<span id="highestBetDisplay">0</span></p>
+                        <p class="text-muted">Highest Stake: ₹<span id="highestBetDisplay">0</span></p>
                         
                         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-                            <button id="btnFold" onclick="sendAction('fold')" class="btn-danger" style="flex: 1;" disabled>Fold</button>
-                            <button id="btnCall" onclick="sendAction('call')" class="btn-success" style="flex: 1; min-width: 120px;" disabled>Check / Call</button>
+                            <button id="btnFold" onclick="sendAction('fold')" class="btn-danger" style="flex: 1;" disabled>Pack (Fold)</button>
+                            <button id="btnCall" onclick="sendAction('call')" class="btn-success" style="flex: 1; min-width: 120px;" disabled>Chaal (Match)</button>
+                            <button id="btnShow" onclick="sendAction('show')" class="btn-info" style="flex: 1;" disabled>Showdown!</button>
                         </div>
                         <div style="margin-top: 15px; display: flex; justify-content: center; gap: 5px;">
                             <input type="number" id="raiseAmount" placeholder="Amount" style="width: 120px; margin: 0;">
-                            <button id="btnRaise" onclick="sendAction('raise')" class="btn-primary" style="margin: 0;" disabled>Raise</button>
+                            <button id="btnRaise" onclick="sendAction('raise')" class="btn-primary" style="margin: 0;" disabled>Raise Stake</button>
                         </div>
                     </div>
                 </div>
@@ -94,14 +93,14 @@
 
         <div class="sidebar-area">
             <div id="chatWidget" class="chat-widget">
-                <h4 style="color: var(--neon-blue); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--neon-blue); padding-bottom: 5px;">
-                    <span id="chatRoomName">Poker</span> Chat
+                <h4 style="color: var(--neon-gold); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--neon-gold); padding-bottom: 5px;">
+                    <span id="chatRoomName">Teen Patti</span> Chat
                 </h4>
                 <div id="chatHistory" class="chat-history">
                 </div>
                 <div class="chat-input-group">
                     <input type="text" id="chatInput" placeholder="Talk trash here...">
-                    <button onclick="sendChat()" style="background: var(--neon-blue);">Send</button>
+                    <button onclick="sendChat()" style="background: var(--neon-gold); color: black;">Send</button>
                 </div>
             </div>
         </div>
@@ -111,19 +110,22 @@
     <div id="instructionsModal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeInstructions()">×</span>
-            <h2 class="text-blue">Welcome to VIP Texas Hold'em</h2>
-            <h4 class="text-gold">How the Game Works</h4>
+            <h2 class="text-gold">Welcome to VIP Teen Patti</h2>
+            <h4 class="text-blue">Hand Rankings (Highest to Lowest)</h4>
+            <ol style="color: var(--text-muted); line-height: 1.6;">
+                <li><strong>Trail (Trio):</strong> Three of a kind (AAA is highest).</li>
+                <li><strong>Pure Sequence:</strong> Straight Flush (A-K-Q, A-2-3, K-Q-J...).</li>
+                <li><strong>Sequence:</strong> Normal Straight.</li>
+                <li><strong>Color:</strong> Flush (3 cards of same suit).</li>
+                <li><strong>Pair:</strong> Two of a kind.</li>
+                <li><strong>High Card:</strong> Highest card wins.</li>
+            </ol>
+            <h4 class="text-blue">How to Play (Casino Simplified)</h4>
             <ul style="color: var(--text-muted); line-height: 1.6;">
-                <li><strong>The Ante:</strong> When a new hand begins, the server automatically pulls a <strong>₹50 Ante</strong> from all seated players to start the Main Pot.</li>
-                <li><strong>The Goal:</strong> Make the best 5-card poker hand using your 2 private "Hole" cards and the 5 public "Community" cards.</li>
-                <li><strong>The Dealer Button:</strong> Since this is a custom home-game engine, anyone can click <strong>"Dealer: Advance Stage"</strong> to deal the next set of cards.</li>
-            </ul>
-            <h4 class="text-gold">Betting Actions</h4>
-            <ul style="color: var(--text-muted); line-height: 1.6;">
-                <li><strong>Wait Your Turn:</strong> Your buttons will highlight green when it is your turn to act.</li>
-                <li><strong>Check / Call:</strong> Match the current highest bet to stay in the hand.</li>
-                <li><strong>Raise:</strong> Increase the highest bet.</li>
-                <li><strong>Fold:</strong> Throw away your cards.</li>
+                <li><strong>The Ante:</strong> ₹100 is automatically deducted to join a hand.</li>
+                <li><strong>Chaal:</strong> Match the current highest stake to stay in.</li>
+                <li><strong>Pack:</strong> Fold your cards if your hand is weak.</li>
+                <li><strong>Showdown!:</strong> Force a showdown with the remaining players. (You must pay the current stake to call a Show).</li>
             </ul>
             <button onclick="closeInstructions()" class="btn-info" style="width: 100%; margin-top: 15px;">Got it, deal me in!</button>
         </div>
@@ -146,12 +148,13 @@
         const socket = io();
         let currentTable = "";
         let myCurrentBet = 0;
+        let myHandDescStr = "";
 
         function openInstructions() { document.getElementById('instructionsModal').style.display = 'flex'; }
         function closeInstructions() { document.getElementById('instructionsModal').style.display = 'none'; }
 
         function createCardHTML(cardData, isHidden = false) {
-            if (isHidden) return `<div class="card card-back"></div>`;
+            if (isHidden || cardData.value === '?') return `<div class="card card-back"></div>`;
             let symbol = "", colorClass = "";
             if (cardData.suit === 'Hearts') { symbol = "♥"; colorClass = "red"; }
             if (cardData.suit === 'Diamonds') { symbol = "♦"; colorClass = "red"; }
@@ -160,20 +163,20 @@
             return `<div class="card ${colorClass}" data-value="${cardData.value}"><div>${cardData.value}</div><div style="font-size: 28px;">${symbol}</div></div>`;
         }
 
-        function joinPoker() {
+        function joinTeenPatti() {
             const username = document.getElementById('usernameInput').value;
             const rawRoom = document.getElementById('roomInput').value;
             if (!username) return alert("Enter a username!");
-            currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "Texas-1";
-            socket.emit('joinPoker', { tableId: currentTable, username });
+            currentTable = (rawRoom && rawRoom.trim() !== "") ? rawRoom.trim() : "TeenPatti-1";
+            socket.emit('joinTeenPatti', { tableId: currentTable, username });
 
             document.getElementById('status').innerText = `Sitting at ${currentTable}`;
             document.getElementById('chatRoomName').innerText = currentTable;
-            document.getElementById('pokerBoard').style.display = "block";
+            document.getElementById('tpBoard').style.display = "block";
             document.getElementById('reactionBar').style.display = "inline-block";
         }
 
-        function devAdvanceStage() { socket.emit('devAdvancePokerStage', currentTable); }
+        function devStartTeenPatti() { socket.emit('devStartTeenPatti', currentTable); }
 
         function sendAction(action) {
             let amount = 0;
@@ -181,26 +184,22 @@
                 amount = document.getElementById('raiseAmount').value;
                 if (!amount || amount <= 0) return alert("Enter a valid raise amount.");
             }
-            socket.emit('pokerAction', { tableId: currentTable, action, amount });
+            socket.emit('teenPattiAction', { tableId: currentTable, action, amount });
             document.getElementById('raiseAmount').value = "";
         }
 
-        socket.on('receiveHoleCards', (cards) => {
+        socket.on('receiveTeenPattiCards', (cards) => {
             let html = "";
             cards.forEach(c => html += createCardHTML(c));
             document.getElementById('myCards').innerHTML = html;
         });
 
-        socket.on('pokerStateUpdate', (data) => {
+        socket.on('teenPattiStateUpdate', (data) => {
             const myUsername = document.getElementById('usernameInput').value;
 
             document.getElementById('stageDisplay').innerText = `Stage: ${data.stage}`;
             document.getElementById('mainPot').innerText = data.pot;
             document.getElementById('highestBetDisplay').innerText = data.highestBet;
-
-            let communityHTML = "";
-            data.communityCards.forEach(c => communityHTML += createCardHTML(c));
-            document.getElementById('communityCards').innerHTML = communityHTML;
 
             let isMyTurn = false;
             let otherPlayersHTML = "";
@@ -209,22 +208,26 @@
                 if (p.username === myUsername) {
                     isMyTurn = p.isTurn;
                     myCurrentBet = p.currentBet;
+                    myHandDescStr = p.handDesc;
+                    document.getElementById('myHandDesc').innerText = p.handDesc;
+                    if (p.cards && p.cards.length > 0 && p.cards[0].value !== '?') {
+                        let myHtml = "";
+                        p.cards.forEach(c => myHtml += createCardHTML(c));
+                        document.getElementById('myCards').innerHTML = myHtml;
+                    }
                 } else {
                     let cardsHTML = "";
-                    if (p.status === 'playing') {
-                        cardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(null, true)}</div>`;
-                        cardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(null, true)}</div>`;
-                    } else if (p.cards.length > 0) {
+                    if (p.cards.length > 0) {
                         p.cards.forEach(c => cardsHTML += `<div style="transform: scale(0.6); margin: -20px; display: inline-block;">${createCardHTML(c)}</div>`);
                     }
 
                     let borderStyle = p.isTurn ? 'border: 3px solid var(--neon-green); box-shadow: 0 0 15px var(--neon-green);' : (p.status === 'winner' ? 'border: 2px solid var(--neon-gold);' : 'border: 1px solid var(--neon-blue);');
-                    let statusText = p.status === 'folded' ? `<span class="text-red">(Folded)</span>` : `Bet: ₹${p.currentBet}`;
+                    let statusText = p.status === 'folded' ? `<span class="text-red">(Packed)</span>` : `Stake: ₹${p.currentBet}`;
                     let handText = p.handDesc ? `<p class="text-gold" style="font-size:12px; margin:5px 0 0 0;">${p.handDesc}</p>` : "";
 
                     otherPlayersHTML += `
                         <div class="glass-panel" style="padding: 15px; ${borderStyle}; margin-bottom: 10px; min-width: 150px;">
-                            <h4 class="text-blue" style="margin: 0 0 5px 0;">${p.username}</h4>
+                            <h4 class="text-gold" style="margin: 0 0 5px 0;">${p.username}</h4>
                             <p class="text-muted" style="margin: 0 0 10px 0; font-size: 12px;">${statusText}</p>
                             <div style="display: flex; justify-content: center;">${cardsHTML}</div>
                             ${handText}
@@ -238,17 +241,20 @@
             const btnFold = document.getElementById('btnFold');
             const btnCall = document.getElementById('btnCall');
             const btnRaise = document.getElementById('btnRaise');
+            const btnShow = document.getElementById('btnShow');
             const turnInd = document.getElementById('turnIndicator');
 
-            if (isMyTurn && data.stage !== 'waiting' && data.stage !== 'showdown') {
-                btnFold.disabled = false; btnCall.disabled = false; btnRaise.disabled = false;
+            if (isMyTurn && data.stage === 'playing') {
+                btnFold.disabled = false; btnCall.disabled = false; btnRaise.disabled = false; btnShow.disabled = false;
                 let callAmount = data.highestBet - myCurrentBet;
-                btnCall.innerText = callAmount > 0 ? `Call (₹${callAmount})` : "Check";
+                btnCall.innerText = callAmount > 0 ? `Chaal (₹${callAmount})` : "Check / Chaal";
+                btnShow.innerText = `Showdown! (₹${callAmount})`;
                 turnInd.innerText = "IT IS YOUR TURN!";
                 turnInd.className = "text-green";
             } else {
-                btnFold.disabled = true; btnCall.disabled = true; btnRaise.disabled = true;
-                btnCall.innerText = "Check / Call";
+                btnFold.disabled = true; btnCall.disabled = true; btnRaise.disabled = true; btnShow.disabled = true;
+                btnCall.innerText = "Chaal";
+                btnShow.innerText = "Showdown!";
                 turnInd.innerText = data.stage === 'showdown' ? "Hand Over" : "Waiting for others...";
                 turnInd.className = "text-red";
             }
@@ -304,7 +310,7 @@
             }
             let html = "";
             tables.forEach(table => {
-                let color = table.game === 'blackjack' ? 'var(--neon-green)' : table.game === 'roulette' ? 'var(--neon-purple)' : 'var(--neon-blue)';
+                let color = table.game === 'blackjack' ? 'var(--neon-green)' : table.game === 'roulette' ? 'var(--neon-purple)' : table.game === 'teenpatti' ? 'var(--neon-gold)' : 'var(--neon-blue)';
                 let playerList = table.players.join(", ");
                 html += `
                 <div style="background: rgba(0,0,0,0.5); border-left: 4px solid ${color}; padding: 12px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
