@@ -249,6 +249,11 @@ socket.on('syStateUpdate', (data) => {
         document.getElementById('setupPanel').style.display = 'none';
         document.getElementById('gameUI').style.display = 'block';
         
+        // Ensure canvas is sized correctly now that it's visible
+        if (canvas.width === 0 || canvas.height === 0) {
+            resizeCanvas();
+        }
+        
         document.getElementById('potAmount').innerText = `₹${data.pot}`;
         
         // Update Turn Indicator
