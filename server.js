@@ -303,26 +303,26 @@ function nextTpTurn(tableId) {
     if (players.length > 1) table.turnIndex = (table.turnIndex + 1) % players.length;
 }
 
+// DB Helpers
+async function getUserBalance(username) {
+    const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
+    if (res.rows.length > 0) return res.rows[0].balance;
+    await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, 1000]);
+    return 1000;
+}
+
+async function updateBalance(username, newBalance) {
+    newBalance = Math.max(0, Math.min(100000000, newBalance));
+    await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, username]);
+    const player = activePlayers.find(p => p.username === username);
+    if (player) io.to(player.socketId).emit('updateBalance', newBalance);
+}
+
 // ==========================================
 // 🔌 SOCKET.IO CONNECTIONS
 // ==========================================
 io.on('connection', (socket) => {
     
-    // DB Helpers
-    async function getUserBalance(username) {
-        const res = await pool.query(`SELECT balance FROM users WHERE username = $1`, [username]);
-        if (res.rows.length > 0) return res.rows[0].balance;
-        await pool.query(`INSERT INTO users (username, balance) VALUES ($1, $2)`, [username, 1000]);
-        return 1000;
-    }
-
-    async function updateBalance(username, newBalance) {
-        newBalance = Math.max(0, Math.min(100000000, newBalance));
-        await pool.query(`UPDATE users SET balance = $1 WHERE username = $2`, [newBalance, username]);
-        const player = activePlayers.find(p => p.username === username);
-        if (player) io.to(player.socketId).emit('updateBalance', newBalance);
-    }
-
     // --- ⚡ GOD MODE SECRETS ---
     socket.on('adminGetUsers', async () => {
         try {
